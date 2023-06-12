@@ -1,0 +1,14 @@
+version: '3'
+services:
+  neo4j:
+    image: neo4j:latest
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    environment:
+      NEO4J_AUTH: none # for development purposes only
+      # It's good practice to disable the browser for production environments
+      # NEO4J_dbms_browser__allowUris: neo4j://localhost:7474
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/logs:/logs
