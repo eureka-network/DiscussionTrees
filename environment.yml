@@ -1,0 +1,9 @@
+name: dt
+dependencies:
+  - python=3.8
+  - requests
+  - beautifulsoup4
+  - lxml
+  - elasticsearch
+  - pip:
+    - scrapy
