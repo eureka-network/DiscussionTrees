@@ -3,8 +3,12 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+import re
+
 import scrapy
 from scrapy import Selector
+
+from neo4j import GraphDatabase
 
 SITEMAP_REQUEST_CONNECT_TIMEOUT = 5
 SITEMAP_REQUEST_READ_TIMEOUT = 10
@@ -46,10 +50,27 @@ def extract_title(response):
     title = selector.css('h1 a::text').get()
     return title
 
+def extract_article_published_date(response):
+    date_published = response.xpath('//meta[@property="article:published_time"]/@content').get()
+    return date_published
+
 def extract_posts(response):
     selector = Selector(response)
     posts = selector.css('.topic-body.crawler-post').getall()
     return posts
+
+def make_safe_identifier(input_str):
+    # Convert to lowercase
+    s = input_str.lower()
+    # Replace whitespaces with underscore
+    s = s.replace(" ", "_")
+    # Remove or replace special characters
+    s = re.sub(r'\W', '', s)
+    # Make sure it's not starting with a number
+    if s[0].isdigit():
+        s = "_" + s
+    return s
+
 
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
@@ -57,7 +78,7 @@ class DiscourseSpider(scrapy.Spider):
     def start_requests(self):
         forums = [
             "https://forum.safe.global",
-        ]
+        ]       
         for forumurl in forums:
 
             # get urlsets from sitemap
@@ -70,19 +91,25 @@ class DiscourseSpider(scrapy.Spider):
                     yield scrapy.Request(url=location.text, callback=self.parse)
 
     def parse(self, response):
+        # a thread page with posts
+
         # page = response.url.split("/")[-2]
         # filename = f"discourse-{page}.html"
         # Path(filename).write_bytes(response.body)
         # self.log(f"Saved file {filename}")
 
-        # get title
-        title = extract_title(response)
-        print(f"title: {title}")
+        # connect to neo4j over Bolt
+        neo4j = Neo4jService('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
+
+        # get title and date published
+        thread_title = extract_title(response)
+        date_published = extract_article_published_date(response)
+        print(f"ID: {date_published}-{thread_title}")
 
         # get posts
-        posts = extract_posts(response)
-        for post in posts:
-            print(f"post: {post}")
+        # posts = extract_posts(response)
+        # for post in posts:
+        #     print(f"post: {post}")
         
         # # Get the list of topics
         # topics = response.css('.topic-body.crawler-post').getall()
@@ -104,6 +131,31 @@ class DiscourseSpider(scrapy.Spider):
         # # If there is a next page, follow it
         # if next_page:
         #     yield scrapy.Request(next_page, callback=self.parse)
+
+class Neo4jService(object):
+    def __init__(self, uri, user, password):
+        self._driver = GraphDatabase.driver(uri, auth=(user, password))
+
+    def close(self):
+        self._driver.close()
+
+    def create_post(self, username, post, thread):
+        with self._driver.session() as session:
+            # The query creates a User, a Post and a Thread if they don't already exist
+            # and creates relationships between them
+            query = """"
+            MERGE (u:User (name: $username))
+            MERGE (p:Post (id: $post_id))
+            SET p.content = $post_content, p.date = $post_date
+            MERGE (t:Thread (id: $thread_id))
+            SET t.title = $thread_title
+            MERGE (u)-[:POSTED]->(p)
+            MERGE (p)-[:IN]->(t)
+            """
+            session.run(query,
+                        username=username,
+                        post_id=post['id'], post_content=post['content'], post_date=post['date'],
+                        thread_id=thread['id'], thread_title=thread['title'])
 
 
 

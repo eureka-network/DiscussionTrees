@@ -7,3 +7,6 @@ dependencies:
   - elasticsearch
   - pip:
     - scrapy
+    - neo4j
+    - pyOpenSSL
+    - cryptography
