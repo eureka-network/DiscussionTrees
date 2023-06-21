@@ -10,3 +10,4 @@ dependencies:
     - neo4j
     - pyOpenSSL
     - cryptography
+    - pysha3

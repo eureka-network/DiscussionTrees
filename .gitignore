@@ -1,3 +1,5 @@
 # saved discourse files
 discourse-*.html
+
+# mac stuff
 .DS_Store

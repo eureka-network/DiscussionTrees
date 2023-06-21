@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 
 import re
 
+import sha3
+
 import scrapy
 from scrapy import Selector
 
@@ -79,11 +81,24 @@ def make_safe_identifier(input_str):
     # TODO: possibly check for max length if neo4j requires it
     return s
 
+# return first four bytes of sha3 hash of unique identifier string
+def get_identifier(identifier_string):
+    k = sha3.keccak_256()
+    k.update(identifier_string.encode('utf-8'))
+    digest = k.digest()
+    return digest[:4]
+
 
 def extract_core_from_post(post):
     author = post.css("span.creator span::text").get()
     post_content = post.css("div[class='post']").get()
-    return {'author': author, 'post_content': post_content}
+    post_datePublished = post.css('time[itemprop="datePublished"]::attr(datetime)').get()
+    post_position = post.css('span[itemprop="position"]::text').get()
+
+    return {'author': author, 
+            'content': post_content,
+            'datePublished': post_datePublished,
+            'position': post_position}
 
 
 class DiscourseSpider(scrapy.Spider):
@@ -94,7 +109,6 @@ class DiscourseSpider(scrapy.Spider):
             "https://forum.safe.global",
         ]
         for forumurl in forums:
-
             # get urlsets from sitemap
             urlsets = get_urlsets_from_sitemap(forumurl)
 
@@ -120,14 +134,17 @@ class DiscourseSpider(scrapy.Spider):
         thread_title = extract_title(response)
         date_published = extract_article_published_date(response)
         cleaned_title = make_safe_identifier(thread_title)
-        thread_id = f"ID: {date_published}-{cleaned_title}"
+        thread_unique_string = f"ID: {date_published}-{cleaned_title}"
+        thread_id = get_identifier(thread_unique_string).hex()
+        thread_core = {'title': thread_title,
+                       'date_published': date_published}
 
         # get posts
         posts = extract_posts(response)
         for post in posts:
             post_core = extract_core_from_post(post)
-            neo4j.create_post(post_core["author"],
-                              post_core["post_content"], thread_id)
+            post_id = f"{thread_id}-{post_core['position']}"
+            neo4j.create_post(post_id, post_core, thread_id, thread_core)
 
         neo4j.close()
         # # Get the list of topics
@@ -159,7 +176,7 @@ class Neo4jService(object):
     def close(self):
         self._driver.close()
 
-    def create_post(self, username, post, thread):
+    def create_post(self,post_id, post_core, thread_id, thread_core):
         with self._driver.session() as session:
             # The query creates a User, a Post and a Thread if they don't already exist
             # and creates relationships between them
@@ -167,15 +184,20 @@ class Neo4jService(object):
             MERGE (u:User (name: $username))
             MERGE (p:Post (id: $post_id))
             SET p.content = $post_content, p.date = $post_date
-            MERGE (t:Thread (id: $thread_id))
+            MERGE (t:Thread (id: $thread_id_hash))
             SET t.title = $thread_title
+            SET t.datePublished = $thread_datePublished
             MERGE (u)-[:POSTED]->(p)
             MERGE (p)-[:IN]->(t)
             """
             session.run(query,
-                        username=username,
-                        post_id=post['id'], post_content=post['content'], post_date=post['date'],
-                        thread_id=thread['id'], thread_title=thread['title'])
+                        username=post_core['author'],
+                        post_id=post_id,
+                        post_content=post_core['content'],
+                        post_date=post_core['datePublished'],
+                        thread_id=thread_id,
+                        thread_title=thread_core['title'],
+                        thread_datePublished=thread_core['date_published'])
 
     # name = 'discourse'
     # allowed_domains = ['discourse.example.com']
