@@ -72,9 +72,10 @@ def make_safe_identifier(input_str):
     # TODO: possibly check for max length if neo4j requires it
     return s
 
-def extract_author_from_post(post):
-    author = post.css('span.creator span::text').get()
-    return author
+def extract_core_from_post(post):
+    author = post.css("span.creator span::text").get()
+    post_content = post.css("div[itemprop='articleBody'] p::text").get()
+    return {'author': author, 'post_content': post_content}
 
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
@@ -114,8 +115,9 @@ class DiscourseSpider(scrapy.Spider):
         # get posts
         posts = extract_posts(response)
         for post in posts:
-            author = extract_author_from_post(post)
-            print(f"author: {author}")
+            post_core = extract_core_from_post(post)
+            print(f"author: {post_core['author']}")
+            print(f"post_content: {post_core['post_content']}")
         
         # # Get the list of topics
         # topics = response.css('.topic-body.crawler-post').getall()
