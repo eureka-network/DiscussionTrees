@@ -14,17 +14,19 @@ SITEMAP_REQUEST_CONNECT_TIMEOUT = 5
 SITEMAP_REQUEST_READ_TIMEOUT = 10
 
 # TODO: sitemap is hardcoded for forum.safe.global, do this better
+
+
 def get_urlsets_from_sitemap(forum_url):
     # try to get the sitemap
     try:
         # set user-agent in headers, todo: update?
         headers = {'user-agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
+                   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
 
         # get sitemap all (1 of 1) posts
         response = requests.get(forum_url + "/sitemap_1.xml",
-                            headers=headers,
-                            timeout=(SITEMAP_REQUEST_CONNECT_TIMEOUT, SITEMAP_REQUEST_READ_TIMEOUT))
+                                headers=headers,
+                                timeout=(SITEMAP_REQUEST_CONNECT_TIMEOUT, SITEMAP_REQUEST_READ_TIMEOUT))
 
         # # get sitemap recent posts
         # response = requests.get(forum_url + "/sitemap_recent.xml",
@@ -42,22 +44,27 @@ def get_urlsets_from_sitemap(forum_url):
 
     except requests.exceptions.RequestException as e:
         print(e)
-        
+
         return None
+
 
 def extract_title(response):
     selector = Selector(response)
     title = selector.css('h1 a::text').get()
     return title
 
+
 def extract_article_published_date(response):
-    date_published = response.xpath('//meta[@property="article:published_time"]/@content').get()
+    date_published = response.xpath(
+        '//meta[@property="article:published_time"]/@content').get()
     return date_published
+
 
 def extract_posts(response):
     # selector = Selector(response)
     posts = response.css('.topic-body.crawler-post')
     return posts
+
 
 def make_safe_identifier(input_str):
     # Convert to lowercase
@@ -72,10 +79,12 @@ def make_safe_identifier(input_str):
     # TODO: possibly check for max length if neo4j requires it
     return s
 
+
 def extract_core_from_post(post):
     author = post.css("span.creator span::text").get()
     post_content = post.css("div[class='post']").get()
     return {'author': author, 'post_content': post_content}
+
 
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
@@ -83,7 +92,7 @@ class DiscourseSpider(scrapy.Spider):
     def start_requests(self):
         forums = [
             "https://forum.safe.global",
-        ]       
+        ]
         for forumurl in forums:
 
             # get urlsets from sitemap
@@ -104,21 +113,23 @@ class DiscourseSpider(scrapy.Spider):
         # self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
-        # neo4j = Neo4jService('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
+        neo4j = Neo4jService('neo4j://localhost:7687',
+                             'neo4j', 'IlGOk+9SoTmmeQ==')
 
         # get title and date thread was published / started for a thread identifier
         thread_title = extract_title(response)
         date_published = extract_article_published_date(response)
         cleaned_title = make_safe_identifier(thread_title)
-        print(f"ID: {date_published}-{cleaned_title}")
+        thread_id = f"ID: {date_published}-{cleaned_title}"
 
         # get posts
         posts = extract_posts(response)
         for post in posts:
             post_core = extract_core_from_post(post)
-            print(f"author: {post_core['author']}")
-            print(f"post_content: {post_core['post_content']}")
-        
+            neo4j.create_post(post_core["author"],
+                              post_core["post_content"], thread_id)
+
+        neo4j.close()
         # # Get the list of topics
         # topics = response.css('.topic-body.crawler-post').getall()
         # print(f"topics: {topics}")
@@ -139,6 +150,7 @@ class DiscourseSpider(scrapy.Spider):
         # # If there is a next page, follow it
         # if next_page:
         #     yield scrapy.Request(next_page, callback=self.parse)
+
 
 class Neo4jService(object):
     def __init__(self, uri, user, password):
@@ -164,8 +176,6 @@ class Neo4jService(object):
                         username=username,
                         post_id=post['id'], post_content=post['content'], post_date=post['date'],
                         thread_id=thread['id'], thread_title=thread['title'])
-
-
 
     # name = 'discourse'
     # allowed_domains = ['discourse.example.com']

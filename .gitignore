@@ -1,2 +1,3 @@
 # saved discourse files
 discourse-*.html
+.DS_Store
