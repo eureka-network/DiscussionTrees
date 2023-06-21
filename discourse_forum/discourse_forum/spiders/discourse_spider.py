@@ -74,7 +74,7 @@ def make_safe_identifier(input_str):
 
 def extract_core_from_post(post):
     author = post.css("span.creator span::text").get()
-    post_content = post.css("div[itemprop='articleBody'] p::text").get()
+    post_content = post.css("div[class='post']").get()
     return {'author': author, 'post_content': post_content}
 
 class DiscourseSpider(scrapy.Spider):
