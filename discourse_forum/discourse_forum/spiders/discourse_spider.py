@@ -55,8 +55,8 @@ def extract_article_published_date(response):
     return date_published
 
 def extract_posts(response):
-    selector = Selector(response)
-    posts = selector.css('.topic-body.crawler-post').getall()
+    # selector = Selector(response)
+    posts = response.css('.topic-body.crawler-post')
     return posts
 
 def make_safe_identifier(input_str):
@@ -69,8 +69,12 @@ def make_safe_identifier(input_str):
     # Make sure it's not starting with a number
     if s[0].isdigit():
         s = "_" + s
+    # TODO: possibly check for max length if neo4j requires it
     return s
 
+def extract_author_from_post(post):
+    author = post.css('span.creator span::text').get()
+    return author
 
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
@@ -99,17 +103,19 @@ class DiscourseSpider(scrapy.Spider):
         # self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
-        neo4j = Neo4jService('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
+        # neo4j = Neo4jService('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
 
-        # get title and date published
+        # get title and date thread was published / started for a thread identifier
         thread_title = extract_title(response)
         date_published = extract_article_published_date(response)
-        print(f"ID: {date_published}-{thread_title}")
+        cleaned_title = make_safe_identifier(thread_title)
+        print(f"ID: {date_published}-{cleaned_title}")
 
         # get posts
-        # posts = extract_posts(response)
-        # for post in posts:
-        #     print(f"post: {post}")
+        posts = extract_posts(response)
+        for post in posts:
+            author = extract_author_from_post(post)
+            print(f"author: {author}")
         
         # # Get the list of topics
         # topics = response.css('.topic-body.crawler-post').getall()
