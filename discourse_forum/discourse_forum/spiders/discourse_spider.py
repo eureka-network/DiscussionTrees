@@ -82,6 +82,8 @@ def make_safe_identifier(input_str):
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
+
+
 def get_identifier(identifier_string):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
@@ -92,10 +94,11 @@ def get_identifier(identifier_string):
 def extract_core_from_post(post):
     author = post.css("span.creator span::text").get()
     post_content = post.css("div[class='post']").get()
-    post_datePublished = post.css('time[itemprop="datePublished"]::attr(datetime)').get()
+    post_datePublished = post.css(
+        'time[itemprop="datePublished"]::attr(datetime)').get()
     post_position = post.css('span[itemprop="position"]::text').get()
 
-    return {'author': author, 
+    return {'author': author,
             'content': post_content,
             'datePublished': post_datePublished,
             'position': post_position}
@@ -176,17 +179,18 @@ class Neo4jService(object):
     def close(self):
         self._driver.close()
 
-    def create_post(self,post_id, post_core, thread_id, thread_core):
+    def create_post(self, post_id, post_core, thread_id, thread_core):
         with self._driver.session() as session:
-            # The query creates a User, a Post and a Thread if they don't already exist
+            print(
+                f"FLAG: DEBUG {post_id}, {post_core}, {thread_id}, {thread_core}")
+            # The query creates a User, a Post, and a Thread if they don't already exist
             # and creates relationships between them
-            query = """"
-            MERGE (u:User (name: $username))
-            MERGE (p:Post (id: $post_id))
+            query = """
+            MERGE (u:User {name: $username})
+            MERGE (p:Post {id: $post_id})
             SET p.content = $post_content, p.date = $post_date
-            MERGE (t:Thread (id: $thread_id_hash))
-            SET t.title = $thread_title
-            SET t.datePublished = $thread_datePublished
+            MERGE (t:Thread {id: $thread_id})
+            SET t.title = $thread_title, t.datePublished = $thread_datePublished
             MERGE (u)-[:POSTED]->(p)
             MERGE (p)-[:IN]->(t)
             """
