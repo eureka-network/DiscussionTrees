@@ -188,7 +188,7 @@ class Neo4jService(object):
             query = """
             MERGE (u:User {name: $username})
             MERGE (p:Post {id: $post_id})
-            SET p.content = $post_content, p.date = $post_date
+            SET p.content = $post_content, p.date = $post_date, p.position = $post_position
             MERGE (t:Thread {id: $thread_id})
             SET t.title = $thread_title, t.datePublished = $thread_datePublished
             MERGE (u)-[:POSTED]->(p)
@@ -199,6 +199,7 @@ class Neo4jService(object):
                         post_id=post_id,
                         post_content=post_core['content'],
                         post_date=post_core['datePublished'],
+                        post_position=post_core["position"],
                         thread_id=thread_id,
                         thread_title=thread_core['title'],
                         thread_datePublished=thread_core['date_published'])

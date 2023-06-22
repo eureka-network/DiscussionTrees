@@ -11,3 +11,6 @@ dependencies:
     - pyOpenSSL
     - cryptography
     - pysha3
+    - langchain
+    - openai
+    - python-dotenv
