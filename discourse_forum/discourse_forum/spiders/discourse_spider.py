@@ -150,7 +150,7 @@ class DiscourseSpider(scrapy.Spider):
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
 
         post_positions_dict = {post_core['position']: post_id for post_core, post_id in zip(posts, post_ids)}
-        post_positions_dict = {k: v for k, v in sorted(post_positions_dict.items())}
+        post_positions_dict = sorted(post_positions_dict.items())
         
         keys = list(post_positions_dict.keys())
 
@@ -160,7 +160,7 @@ class DiscourseSpider(scrapy.Spider):
 
             previous_post_id = post_positions_dict[previous_post_pos]
             current_post_id = post_positions_dict[current_post_pos]
-            
+
             neo4j.follow_post(previous_post_id, current_post_id)
 
         neo4j.close()
