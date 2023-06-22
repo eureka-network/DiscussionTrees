@@ -143,11 +143,25 @@ class DiscourseSpider(scrapy.Spider):
                        'date_published': date_published}
 
         # get posts
-        posts = extract_posts(response)
-        for post in posts:
-            post_core = extract_core_from_post(post)
-            post_id = f"{thread_id}-{post_core['position']}"
+        posts = [extract_core_from_post(post) for post in extract_posts(response)]
+        post_ids = [f"{thread_id}-{post_core['position']}" for post_core in posts]
+
+        for post_core, post_id in zip(posts, post_ids):
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
+
+        post_positions_dict = {post_core['position']: post_id for post_core, post_id in zip(posts, post_ids)}
+        post_positions_dict = {k: v for k, v in sorted(post_positions_dict.items())}
+        
+        keys = list(post_positions_dict.keys())
+
+        for i in range(len(keys) - 1):
+            previous_post_pos = keys[i]
+            current_post_pos = keys[i + 1]
+
+            previous_post_id = post_positions_dict[previous_post_pos]
+            current_post_id = post_positions_dict[current_post_pos]
+            
+            neo4j.follow_post(previous_post_id, current_post_id)
 
         neo4j.close()
         # # Get the list of topics
@@ -181,8 +195,6 @@ class Neo4jService(object):
 
     def create_post(self, post_id, post_core, thread_id, thread_core):
         with self._driver.session() as session:
-            print(
-                f"FLAG: DEBUG {post_id}, {post_core}, {thread_id}, {thread_core}")
             # The query creates a User, a Post, and a Thread if they don't already exist
             # and creates relationships between them
             query = """
@@ -203,6 +215,15 @@ class Neo4jService(object):
                         thread_id=thread_id,
                         thread_title=thread_core['title'],
                         thread_datePublished=thread_core['date_published'])
+            
+    def follow_post(self, previous_post_id, current_post_id):
+        with self._driver.session() as session:
+            query = """
+            MATCH (previousPost:Post {id: $previous_post_id})
+            MATCH (currentPost:Post {id: $current_post_id})
+            MERGE (currentPost)-[:FOLLOWS]->(previousPost)
+            """
+            session.run(query, previous_post_id=previous_post_id, current_post_id=current_post_id)
 
     # name = 'discourse'
     # allowed_domains = ['discourse.example.com']
