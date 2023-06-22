@@ -1,5 +1,14 @@
 # saved discourse files
 discourse-*.html
 
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # mac stuff
 .DS_Store
+
+# dotenv file
+.env
