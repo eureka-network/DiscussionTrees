@@ -151,13 +151,12 @@ class DiscourseSpider(scrapy.Spider):
         for post in posts:
             post_core = extract_core_from_post(post)
             post_id = f"{thread_id}-{post_core['position']}"
-
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
 
         # run over the dictionary to look up subsequent pairs
         for position, post_id in post_positions_dict.items():
-            preceding_post_id = post_positions_dict.get(position-1)
+            preceding_post_id = post_positions_dict.get(str(int(position)-1))
             if preceding_post_id:
                 neo4j.follow_post(preceding_post_id, post_id)
 
@@ -213,7 +212,7 @@ class Neo4jService(object):
                         thread_id=thread_id,
                         thread_title=thread_core['title'],
                         thread_datePublished=thread_core['date_published'])
-            
+
     def follow_post(self, previous_post_id, current_post_id):
         with self._driver.session() as session:
             query = """
@@ -221,7 +220,8 @@ class Neo4jService(object):
             MATCH (currentPost:Post {id: $current_post_id})
             MERGE (currentPost)-[:FOLLOWS]->(previousPost)
             """
-            session.run(query, previous_post_id=previous_post_id, current_post_id=current_post_id)
+            session.run(query, previous_post_id=previous_post_id,
+                        current_post_id=current_post_id)
 
     # name = 'discourse'
     # allowed_domains = ['discourse.example.com']
