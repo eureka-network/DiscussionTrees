@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -145,11 +146,7 @@ class DiscourseSpider(scrapy.Spider):
 
     def parse(self, response):
         # a thread page with posts
-
-        # page = response.url.split("/")[-2]
-        # filename = f"discourse-{page}.html"
-        # Path(filename).write_bytes(response.body)
-        # self.log(f"Saved file {filename}")
+        print(f"FLAG: DEBUG start PARSE")
 
         # connect to neo4j over Bolt
         neo4j = Neo4jService('neo4j://localhost:7687',
@@ -157,6 +154,7 @@ class DiscourseSpider(scrapy.Spider):
 
         # get title and date thread was published / started for a thread identifier
         thread_title = extract_title(response)
+        print(f"FLAG: DEBUG thread_title = {thread_title}")
         date_published = extract_article_published_date(response)
         cleaned_title = make_safe_identifier(thread_title)
         thread_unique_string = f"ID: {date_published}-{cleaned_title}"
@@ -172,6 +170,9 @@ class DiscourseSpider(scrapy.Spider):
 
         for post in posts:
             post_core = extract_core_from_post(post)
+            if post_core['author'] is None:
+                # TODO: catch this edge case appropriately
+                continue
             post_id = f"{thread_id}-{post_core['position']}"
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
@@ -187,7 +188,14 @@ class DiscourseSpider(scrapy.Spider):
 
         # If there is a next page, follow it
         if next_page:
-            yield scrapy.Request(next_page, callback=self.parse)
+            print("FLAG: DEBUG")
+            try:
+                yield scrapy.Request(response.urljoin(
+                    next_page), callback=self.parse)
+            # yield scrapy.Request(response.urljoin(next_page), callback=self.parse)
+            except ValueError as e:
+                print(
+                    f"FLAG: DEBUG Failed to create request for next page: {e}")
 
 
 class Neo4jService(object):
@@ -199,6 +207,8 @@ class Neo4jService(object):
 
     def create_post(self, post_id, post_core, thread_id, thread_core):
         with self._driver.session() as session:
+            print("FLAG: DEBUG 1")
+            print(f"FLAG: DEBUG post_core = {post_core['author']}")
             # The query creates a User, a Post, and a Thread if they don't already exist
             # and creates relationships between them
             query = """
@@ -219,6 +229,7 @@ class Neo4jService(object):
                         thread_id=thread_id,
                         thread_title=thread_core['title'],
                         thread_datePublished=thread_core['date_published'])
+            print("FLAG: DEBUG2")
 
     def follow_post(self, previous_post_id, current_post_id):
         with self._driver.session() as session:
