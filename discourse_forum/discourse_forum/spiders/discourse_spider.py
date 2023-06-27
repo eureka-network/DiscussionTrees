@@ -185,7 +185,7 @@ class DiscourseSpider(scrapy.Spider):
         next_page = response.css('a[rel="next"]::attr(href)').get()
 
         # If there is a next page, follow it
-        if next_page:
+        if next_page is not None:
             try:
                 yield scrapy.Request(response.urljoin(
                     next_page), callback=self.parse)
