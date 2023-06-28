@@ -294,8 +294,11 @@ class Neo4jService(object):
                 MERGE (p)-[:IN_TOPIC]->(:DataPost {topic: $block_quote_data_post})
                 MERGE (q)-[:IN_TOPIC]->(:DataTopic {topic: $block_quote_data_topic})
                 """
-                session.run(query, username=username, block_quote_username=block_quote_username,
-                            post_id=post_id, post_content=post_content,
+                session.run(query,
+                            username=username,
+                            block_quote_username=block_quote_username,
+                            post_id=post_id,
+                            post_content=post_content,
                             block_quote_content=block_quote_content,
                             block_quote_data_post=block_quote_data_post,
                             block_quote_data_topic=block_quote_data_topic)
