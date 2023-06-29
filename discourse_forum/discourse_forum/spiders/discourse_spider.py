@@ -266,14 +266,18 @@ class Neo4jService(object):
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
 
-    def replies(self, reply_id, thread_id):
+    def replies(self, reply_id, post_id, reply_core):
         with self._driver.session() as session:
             query = """
+            MERGE (u:Username {username: $username})
             MERGE (r:Reply {reply: $reply_id})
-            MATCH (t:Thread {id: $thread_id})
-            Merge (t)-[:FOLLOWS]->(r)
+            MATCH (p:Post {id: $post_id})
+            SET r.content = $reply_content, r.datePublished = $reply_date_published
+            MERGE (u)-[:POSTED_REPLY]->(r) 
+            MERGE (r)-[:REPLY_TO]->(p)
             """
-            session.run(query, reply_id, thread_id)
+            session.run(query, username=reply_core['author'], reply_id=reply_id, post_id=post_id,
+                        reply_content=reply_core['content'], reply_date_published=reply_core['datePublished'])
 
     def block_quotes(self, username, post_id, post_content, block_quotes):
         for quote in block_quotes:
