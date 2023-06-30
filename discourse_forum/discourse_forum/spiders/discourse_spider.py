@@ -225,36 +225,3 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
-
-        # name = 'discourse'
-        # allowed_domains = ['discourse.example.com']
-        # start_urls = ['https://discourse.example.com/']
-
-        # def parse(self, response):
-        #     # Get the list of topics
-        #     topics = response.css('tr.topic-list-item')
-
-        #     # Get the topic title and link
-        #     for topic in topics:
-        #         topic_title = topic.css('a.title::text').get()
-        #         topic_link = response.urljoin(topic.css('a.title::attr(href)').get())
-
-        #         # Get the topic content
-        #         yield scrapy.Request(topic_link, callback=self.parse_topic, meta={'topic_title': topic_title})
-
-        #     # Get the next page link
-        #     next_page = response.css('a.next::attr(href)').get()
-
-        #     # If there is a next page, follow it
-        #     if next_page:
-        #         yield scrapy.Request(next_page, callback=self.parse)
-
-        # def parse_topic(self, response):
-        #     # Get the topic title and content
-        #     topic_title = response.meta['topic_title']
-        #     topic_content = response.css('div.topic-body').get()
-
-        #     # Save the topic content to a file
-        #     Path('data').mkdir(parents=True, exist_ok=True)
-        #     with open(f'data/{topic_title}.html', 'w') as f:
-        #         f.write(topic_content)
