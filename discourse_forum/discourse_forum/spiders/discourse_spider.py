@@ -65,12 +65,19 @@ def extract_title(response: Response):
     title = selector.css('h1 a::text').get()
     return title
 
+# # Note: upon paginatation, the date published is the date of the first post on the page... wtf Discourse?
+# def extract_article_published_date(response: Response):
+#     date_published = response.xpath(
+#         '//meta[@property="article:published_time"]/@content').get()
+#     return date_published
 
-def extract_article_published_date(response: Response):
-    date_published = response.xpath(
-        '//meta[@property="article:published_time"]/@content').get()
-    return date_published
-
+# Discourse puts a unique identifier in the URL for easy lookup. Get it.
+def extract_identifier(url):
+    """Extracts unique thread identifier from URL."""
+    try:
+        return re.search(r"/(\d+)\?", url).group(1)
+    except AttributeError:
+        return "No identifier found in URL."
 
 def extract_posts(response: Response):
     # selector = Selector(response)
@@ -128,7 +135,6 @@ class DiscourseSpider(scrapy.Spider):
             for urlset in urlsets:
                 locations = urlset.select('url loc')
                 for location in locations:
-                    print(location.text)
                     yield scrapy.Request(url=location.text, callback=self.parse)
 
     def parse(self, response):
@@ -145,12 +151,14 @@ class DiscourseSpider(scrapy.Spider):
 
         # get title and date thread was published / started for a thread identifier
         thread_title = extract_title(response)
-        date_published = extract_article_published_date(response)
+        thread_discourse_id = extract_identifier(response.url)
         cleaned_title = make_safe_identifier(thread_title)
-        thread_unique_string = f"ID: {date_published}-{cleaned_title}"
+        thread_unique_string = f"ID: SAFE-FORUM-{cleaned_title}"
         thread_id = get_identifier(thread_unique_string).hex()
         thread_core = {'title': thread_title,
-                       'date_published': date_published}
+                       'discourse_id': thread_discourse_id}
+
+        print(f"URL: {response.url} - {thread_discourse_id}")
 
         # get posts
         posts = extract_posts(response)
@@ -202,7 +210,7 @@ class Neo4jService(object):
             MERGE (p:Post {id: $post_id})
             SET p.content = $post_content, p.date = $post_date, p.position = $post_position
             MERGE (t:Thread {id: $thread_id})
-            SET t.title = $thread_title, t.datePublished = $thread_datePublished
+            SET t.title = $thread_title
             MERGE (u)-[:POSTED]->(p)
             MERGE (p)-[:IN]->(t)
             """
@@ -213,8 +221,7 @@ class Neo4jService(object):
                         post_date=post_core['datePublished'],
                         post_position=post_core["position"],
                         thread_id=thread_id,
-                        thread_title=thread_core['title'],
-                        thread_datePublished=thread_core['date_published'])
+                        thread_title=thread_core['title'])
 
     def follow_post(self, previous_post_id, current_post_id):
         with self._driver.session() as session:
