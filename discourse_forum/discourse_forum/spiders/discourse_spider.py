@@ -181,7 +181,6 @@ class DiscourseSpider(scrapy.Spider):
             try:
                 yield scrapy.Request(response.urljoin(
                     next_page), callback=self.parse)
-            # yield scrapy.Request(response.urljoin(next_page), callback=self.parse)
             except ValueError as e:
                 print(
                     f"Failed to create request for next page: {e}")
