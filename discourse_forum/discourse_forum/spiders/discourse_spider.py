@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Optional
 
 import requests
-from bs4 import BeautifulSoup
+from requests import Response
+from bs4 import BeautifulSoup, ResultSet, Tag
 
 import re
 
@@ -18,17 +20,25 @@ SITEMAP_REQUEST_READ_TIMEOUT = 10
 # TODO: sitemap is hardcoded for forum.safe.global, do this better
 
 
-def get_urlsets_from_sitemap(forum_url):
-    # try to get the sitemap
+def get_urlsets_from_sitemap(forum_url: str) -> Optional[ResultSet]:
+    """
+    Fetches the sitemap XML from the specified forum URL and returns the 'urlset' elements.
+
+    Args:
+        forum_url (str): The URL of the forum.
+
+    Returns:
+        Optional[ResultSet]: The 'urlset' elements from the sitemap, or None if there was an error.
+    """
     try:
         # set user-agent in headers, todo: update?
-        headers = {'user-agent':
-                   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
+        headers: dict[str, str] = {'user-agent':
+                                   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
 
         # get sitemap all (1 of 1) posts
-        response = requests.get(forum_url + "/sitemap_1.xml",
-                                headers=headers,
-                                timeout=(SITEMAP_REQUEST_CONNECT_TIMEOUT, SITEMAP_REQUEST_READ_TIMEOUT))
+        response: Response = requests.get(forum_url + "/sitemap_1.xml",
+                                          headers=headers,
+                                          timeout=(SITEMAP_REQUEST_CONNECT_TIMEOUT, SITEMAP_REQUEST_READ_TIMEOUT))
 
         # # get sitemap recent posts
         # response = requests.get(forum_url + "/sitemap_recent.xml",
@@ -38,9 +48,9 @@ def get_urlsets_from_sitemap(forum_url):
         # raise exception if status code is 400 or greater
         response.raise_for_status()
 
-        xml_parser = BeautifulSoup(response.text, "xml")
+        xml_parser: BeautifulSoup = BeautifulSoup(response.text, "xml")
 
-        urlsets = xml_parser.select('urlset')
+        urlsets: ResultSet[Tag] = xml_parser.select('urlset')
 
         return urlsets
 
@@ -50,41 +60,41 @@ def get_urlsets_from_sitemap(forum_url):
         return None
 
 
-def extract_title(response):
-    selector = Selector(response)
+def extract_title(response: Response):
+    selector: Selector = Selector(response)
     title = selector.css('h1 a::text').get()
     return title
 
 
-def extract_article_published_date(response):
+def extract_article_published_date(response: Response):
     date_published = response.xpath(
         '//meta[@property="article:published_time"]/@content').get()
     return date_published
 
 
-def extract_posts(response):
+def extract_posts(response: Response):
     # selector = Selector(response)
     posts = response.css('.topic-body.crawler-post')
     return posts
 
 
-def make_safe_identifier(input_str):
+def make_safe_identifier(input_str: str) -> str:
     # Convert to lowercase
-    s = input_str.lower()
+    s: str = input_str.lower()
     # Replace whitespaces with underscore
-    s = s.replace(" ", "_")
+    s: str = s.replace(" ", "_")
     # Remove or replace special characters
-    s = re.sub(r'\W', '', s)
+    s: str = re.sub(r'\W', '', s)
     # Make sure it's not starting with a number
     if s[0].isdigit():
-        s = "_" + s
+        s: str = "_" + s
     # TODO: possibly check for max length if neo4j requires it
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
 
 
-def get_identifier(identifier_string):
+def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
     digest = k.digest()
@@ -150,6 +160,9 @@ class DiscourseSpider(scrapy.Spider):
 
         for post in posts:
             post_core = extract_core_from_post(post)
+            if post_core['author'] is None:
+                # TODO: catch this edge case appropriately
+                continue
             post_id = f"{thread_id}-{post_core['position']}"
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
@@ -160,27 +173,17 @@ class DiscourseSpider(scrapy.Spider):
             if preceding_post_id:
                 neo4j.follow_post(preceding_post_id, post_id)
 
-        neo4j.close()
-        # # Get the list of topics
-        # topics = response.css('.topic-body.crawler-post').getall()
-        # print(f"topics: {topics}")
+        # Get the next page link
+        next_page = response.css('a[rel="next"]::attr(href)').get()
 
-        # # Get the topic title and link
-        # for topic in topics:
-        #     print(f"topic: {topic}")
-        #     topic
-        #     # topic_title = topic.css('a.title::text').get()
-        #     # topic_link = response.urljoin(topic.css('a.title::attr(href)').get())
-
-        #     # Get the topic content
-        #     yield scrapy.Request(topic_link, callback=self.parse_topic, meta={'topic_title': topic_title})
-
-        # # Get the next page link
-        # next_page = response.css('a.next::attr(href)').get()
-
-        # # If there is a next page, follow it
-        # if next_page:
-        #     yield scrapy.Request(next_page, callback=self.parse)
+        # If there is a next page, follow it
+        if next_page is not None:
+            try:
+                yield scrapy.Request(response.urljoin(
+                    next_page), callback=self.parse)
+            except ValueError as e:
+                print(
+                    f"Failed to create request for next page: {e}")
 
 
 class Neo4jService(object):
@@ -222,36 +225,3 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
-
-    # name = 'discourse'
-    # allowed_domains = ['discourse.example.com']
-    # start_urls = ['https://discourse.example.com/']
-
-    # def parse(self, response):
-    #     # Get the list of topics
-    #     topics = response.css('tr.topic-list-item')
-
-    #     # Get the topic title and link
-    #     for topic in topics:
-    #         topic_title = topic.css('a.title::text').get()
-    #         topic_link = response.urljoin(topic.css('a.title::attr(href)').get())
-
-    #         # Get the topic content
-    #         yield scrapy.Request(topic_link, callback=self.parse_topic, meta={'topic_title': topic_title})
-
-    #     # Get the next page link
-    #     next_page = response.css('a.next::attr(href)').get()
-
-    #     # If there is a next page, follow it
-    #     if next_page:
-    #         yield scrapy.Request(next_page, callback=self.parse)
-
-    # def parse_topic(self, response):
-    #     # Get the topic title and content
-    #     topic_title = response.meta['topic_title']
-    #     topic_content = response.css('div.topic-body').get()
-
-    #     # Save the topic content to a file
-    #     Path('data').mkdir(parents=True, exist_ok=True)
-    #     with open(f'data/{topic_title}.html', 'w') as f:
-    #         f.write(topic_content)
