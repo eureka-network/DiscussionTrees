@@ -75,7 +75,7 @@ def extract_title(response: Response):
 def extract_identifier(url):
     """Extracts unique thread identifier from URL."""
     try:
-        return re.search(r"/(\d+)\?", url).group(1)
+        return re.search(r"/(\d+)(\?|$)", url).group(1)
     except AttributeError:
         return "No identifier found in URL."
 
@@ -99,8 +99,6 @@ def make_safe_identifier(input_str: str) -> str:
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
-
-
 def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
@@ -153,12 +151,10 @@ class DiscourseSpider(scrapy.Spider):
         thread_title = extract_title(response)
         thread_discourse_id = extract_identifier(response.url)
         cleaned_title = make_safe_identifier(thread_title)
-        thread_unique_string = f"ID: SAFE-FORUM-{cleaned_title}"
+        thread_unique_string = f"ID: SAFEFORUM-{thread_discourse_id}-{cleaned_title}"
         thread_id = get_identifier(thread_unique_string).hex()
         thread_core = {'title': thread_title,
                        'discourse_id': thread_discourse_id}
-
-        print(f"URL: {response.url} - {thread_discourse_id}")
 
         # get posts
         posts = extract_posts(response)
@@ -210,7 +206,7 @@ class Neo4jService(object):
             MERGE (p:Post {id: $post_id})
             SET p.content = $post_content, p.date = $post_date, p.position = $post_position
             MERGE (t:Thread {id: $thread_id})
-            SET t.title = $thread_title
+            SET t.title = $thread_title, t.discourse_id = $thread_discourse_id
             MERGE (u)-[:POSTED]->(p)
             MERGE (p)-[:IN]->(t)
             """
@@ -221,7 +217,8 @@ class Neo4jService(object):
                         post_date=post_core['datePublished'],
                         post_position=post_core["position"],
                         thread_id=thread_id,
-                        thread_title=thread_core['title'])
+                        thread_title=thread_core['title'],
+                        thread_discourse_id=thread_core['discourse_id'])
 
     def follow_post(self, previous_post_id, current_post_id):
         with self._driver.session() as session:
