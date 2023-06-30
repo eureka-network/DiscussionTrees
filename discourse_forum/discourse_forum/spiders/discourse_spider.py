@@ -161,10 +161,10 @@ class DiscourseSpider(scrapy.Spider):
     def parse(self, response):
         # a thread page with posts
 
-        # page = response.url.split("/")[-2]
-        # filename = f"discourse-{page}.html"
-        # Path(filename).write_bytes(response.body)
-        # self.log(f"Saved file {filename}")
+        page = response.url.split("/")[-2]
+        filename = f"discourse-{page}.html"
+        Path(filename).write_bytes(response.body)
+        self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
         neo4j = Neo4jService('neo4j://localhost:7687',
