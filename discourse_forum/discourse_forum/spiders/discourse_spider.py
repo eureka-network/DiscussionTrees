@@ -114,19 +114,6 @@ def extract_core_from_post(post):
             'position': post_position}
 
 
-def extract_core_from_reply(reply):
-    author = reply.css("span.creator span::text").get()
-    reply_content = reply.css("div[class='post-reply']").get()
-    reply_datePublished = reply.css(
-        'time[itemprop="datePublished"]::attr(datetime)').get()
-    reply_position = reply.css('span[itemprop="position"]::text').get()
-
-    return {'author': author,
-            'content': reply_content,
-            'datePublished': reply_datePublished,
-            'position': reply_position}
-
-
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
 
@@ -146,6 +133,11 @@ class DiscourseSpider(scrapy.Spider):
 
     def parse(self, response):
         # a thread page with posts
+
+        # page = response.url.split("/")[-2]
+        # filename = f"discourse-{page}.html"
+        # Path(filename).write_bytes(response.body)
+        # self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
         neo4j = Neo4jService('neo4j://localhost:7687',
@@ -234,15 +226,6 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
-
-    def replies(self, reply_id, thread_id):
-        with self._driver.session() as session:
-            query = """
-            MERGE (r:Reply {reply: $reply_id})
-            MATCH (t:Thread {id: $thread_id})
-            Merge (t)-[:FOLLOWS]->(r)
-            """
-            session.run(query, reply_id, thread_id)
 
         # name = 'discourse'
         # allowed_domains = ['discourse.example.com']
