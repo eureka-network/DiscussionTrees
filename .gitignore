@@ -3,6 +3,8 @@ discourse-*.html
 
 # python cache
 __pycache__/
+discourse_forum/discourse_forum/__pycache__/
+discourse_forum/discourse_forum/spiders/__pycache__/
 *.pyc
 *.pyo
 *.pyd
