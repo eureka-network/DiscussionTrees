@@ -85,6 +85,11 @@ def extract_posts(response: Response):
     return posts
 
 
+def extract_block_quotes(response: Response):
+    block_quotes = response.css('blockquote')
+    return block_quotes
+
+
 def make_safe_identifier(input_str: str) -> str:
     # Convert to lowercase
     s: str = input_str.lower()
@@ -119,6 +124,28 @@ def extract_core_from_post(post):
             'position': post_position}
 
 
+def extract_block_quotes_from_post(post):
+    quotes = post.css('aside.quote')
+    output = []
+    for quote in quotes:
+        quote_content = quote.css('blockquote p::text').get()
+        data_username = quote.attrib.get('data-username')
+        data_post = quote.attrib.get('data-post')
+        data_topic = quote.attrib.get('data-topic')
+
+        if quote_content is None:
+            # ignore quotes without content
+            continue
+
+        output.append({
+            'quote_content': quote_content,
+            'data_username': data_username,
+            'data_post': data_post,
+            'data_topic': data_topic
+        })
+    return output
+
+
 class DiscourseSpider(scrapy.Spider):
     name = "discourse"
 
@@ -138,10 +165,10 @@ class DiscourseSpider(scrapy.Spider):
     def parse(self, response):
         # a thread page with posts
 
-        # page = response.url.split("/")[-2]
-        # filename = f"discourse-{page}.html"
-        # Path(filename).write_bytes(response.body)
-        # self.log(f"Saved file {filename}")
+        page = response.url.split("/")[-2]
+        filename = f"discourse-{page}.html"
+        Path(filename).write_bytes(response.body)
+        self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
         neo4j = Neo4jService('neo4j://localhost:7687',
@@ -170,6 +197,10 @@ class DiscourseSpider(scrapy.Spider):
             post_id = f"{thread_id}-{post_core['position']}"
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
+            # get quotes
+            block_quotes = extract_block_quotes_from_post(post)
+            neo4j.block_quotes(
+                post_core['author'], post_id, post_core['content'], block_quotes)
 
         # run over the dictionary to look up subsequent pairs
         for position, post_id in post_positions_dict.items():
@@ -229,3 +260,31 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
+
+    def block_quotes(self, username, post_id, post_content, block_quotes):
+        for quote in block_quotes:
+            block_quote_username = quote['data_username']
+            block_quote_content = quote['quote_content']
+            block_quote_data_post = quote['data_post']
+            block_quote_data_topic = quote['data_topic']
+
+            with self._driver.session() as session:
+                query = """
+                MATCH (u:User {name: $username})
+                MATCH (bu:User {name: $block_quote_username})
+                MATCH (p:Post {id: $post_id, content: $post_content})
+                MERGE (q:Quote {content: $block_quote_content})
+                MERGE (u)-[:POSTED]->(p)
+                MERGE (bu)-[:POSTED]->(q)
+                MERGE (q)-[:QUOTE]->(p)
+                MERGE (p)-[:IN_TOPIC]->(:DataPost {topic: $block_quote_data_post})
+                MERGE (q)-[:IN_TOPIC]->(:DataTopic {topic: $block_quote_data_topic})
+                """
+                session.run(query,
+                            username=username,
+                            block_quote_username=block_quote_username,
+                            post_id=post_id,
+                            post_content=post_content,
+                            block_quote_content=block_quote_content,
+                            block_quote_data_post=block_quote_data_post,
+                            block_quote_data_topic=block_quote_data_topic)
