@@ -8,7 +8,7 @@ def get_thread_contents(thread_id: str):
     return
 
 
-class DiscourseInitialPromptTemplate(StringPromptTemplate, BaseModel):
+class KnowledgeGraphPromptTemplate(StringPromptTemplate, BaseModel):
     """A custom prompt template for initial summarization of the contents of a given thread."""
 
     @validator("input_variables")
