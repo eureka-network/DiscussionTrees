@@ -72,6 +72,8 @@ def extract_title(response: Response):
 #     return date_published
 
 # Discourse puts a unique identifier in the URL for easy lookup. Get it.
+
+
 def extract_identifier(url):
     """Extracts unique thread identifier from URL."""
     try:
@@ -79,15 +81,11 @@ def extract_identifier(url):
     except AttributeError:
         return "No identifier found in URL."
 
+
 def extract_posts(response: Response):
     # selector = Selector(response)
     posts = response.css('.topic-body.crawler-post')
     return posts
-
-
-def extract_block_quotes(response: Response):
-    block_quotes = response.css('blockquote')
-    return block_quotes
 
 
 def make_safe_identifier(input_str: str) -> str:
@@ -104,6 +102,8 @@ def make_safe_identifier(input_str: str) -> str:
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
+
+
 def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
@@ -130,8 +130,6 @@ def extract_block_quotes_from_post(post):
     for quote in quotes:
         quote_content = quote.css('blockquote p::text').get()
         data_username = quote.attrib.get('data-username')
-        data_post = quote.attrib.get('data-post')
-        data_topic = quote.attrib.get('data-topic')
 
         if quote_content is None:
             # ignore quotes without content
@@ -140,8 +138,6 @@ def extract_block_quotes_from_post(post):
         output.append({
             'quote_content': quote_content,
             'data_username': data_username,
-            'data_post': data_post,
-            'data_topic': data_topic
         })
     return output
 
@@ -165,10 +161,10 @@ class DiscourseSpider(scrapy.Spider):
     def parse(self, response):
         # a thread page with posts
 
-        page = response.url.split("/")[-2]
-        filename = f"discourse-{page}.html"
-        Path(filename).write_bytes(response.body)
-        self.log(f"Saved file {filename}")
+        # page = response.url.split("/")[-2]
+        # filename = f"discourse-{page}.html"
+        # Path(filename).write_bytes(response.body)
+        # self.log(f"Saved file {filename}")
 
         # connect to neo4j over Bolt
         neo4j = Neo4jService('neo4j://localhost:7687',
@@ -265,8 +261,6 @@ class Neo4jService(object):
         for quote in block_quotes:
             block_quote_username = quote['data_username']
             block_quote_content = quote['quote_content']
-            block_quote_data_post = quote['data_post']
-            block_quote_data_topic = quote['data_topic']
 
             with self._driver.session() as session:
                 query = """
@@ -275,16 +269,12 @@ class Neo4jService(object):
                 MATCH (p:Post {id: $post_id, content: $post_content})
                 MERGE (q:Quote {content: $block_quote_content})
                 MERGE (u)-[:POSTED]->(p)
-                MERGE (bu)-[:POSTED]->(q)
+                MERGE (bu)-[:POSTED_QUOTE]->(q)
                 MERGE (q)-[:QUOTE]->(p)
-                MERGE (p)-[:IN_TOPIC]->(:DataPost {topic: $block_quote_data_post})
-                MERGE (q)-[:IN_TOPIC]->(:DataTopic {topic: $block_quote_data_topic})
                 """
                 session.run(query,
                             username=username,
                             block_quote_username=block_quote_username,
                             post_id=post_id,
                             post_content=post_content,
-                            block_quote_content=block_quote_content,
-                            block_quote_data_post=block_quote_data_post,
-                            block_quote_data_topic=block_quote_data_topic)
+                            block_quote_content=block_quote_content)
