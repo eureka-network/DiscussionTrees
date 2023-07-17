@@ -171,13 +171,39 @@ the quality of the attention can degrade over longer context lengths.
 One outlier paper LongNet claims to achieve a context length of "1 billion tokens" (with diluted attention)
 and measures the quality of the attention for different context lenghts 
 with a perplexity measure (see Table 2 [LongNet2023](https://arxiv.org/pdf/2307.02486.pdf)).
-To our understanding these matters are far from settled by the community, and it is not our ambition to resolve them here.
+To our understanding these matters are far from settled by the community,
+and it is not our ambition to resolve them here.
 
-We can conclude however that we want our algorithm to work with a finite context length.
+We can conclude however that we want our algorithm to work with a finite context length,
+and that we want to build representations for text bodies larger than that context length.
+
+Our (LLM's) attention is not only limited by the context length;
+also the specific world-building lens we current have "focuses our attention".
+On a philosophical note, only by having a goal to answer a specific question
+about the text buffer, can we build an "internal map" or representation;
+otherwise, the software is simply a (re-)recording device.
+
+These are the first two reasons (context length, and question-type) to introduce
+*perception frames*, or *frames*. Frames form a strict sequence such that
+we have a tool to order and preserve which questions we ask over which pieces of text
+from the text body.
+
+In one frame we consider one *group* of text at a given *level* with a set *world building question*.
+We will construct these three terms in what follows.
+
+In each additional frame we can navigate through full body of text,
+either by moving/jumping the location of the group,
+changing the level (roughly, zooming in or out), or by asking a different type of question.
+For initial implementations, we imagine to have very naive and hard-coded pathways.
+We will simply slide the group iteratively through the text body at different levels,
+and with different questions, and collect the outputs together in one graph database
+as the intermediate representation.
+
+### Groups
 
 
 
 [continue here]
 
 
- copyright © 2023. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
+ copyright © 2023 Benjamin Bollen. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
