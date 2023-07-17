@@ -142,6 +142,41 @@ performance of the LLM capability can be estimated algorithmically.
 
 ## Pseudo-code for perception frames, groups and levels across lenses
 
+We will try to present a scaffold to put the findings together.
+At the same time, it is a scaffold and as such there will be pieces
+missing that we propose should be worked out and put in place.
+However, to learn we must take small incremental steps,
+so the aim is to have a minimal working tool.
+
+Even though it is important to repeat that the project
+is called "Discussion Trees", and the original use-case 
+aims at better representing (governance) forum discussions,
+we will try to generalise (possibly prematurely) in the interest of adjacent projects.
+One such use-case is to structure more general knowledge bases,
+and try to share thoughts on both use-cases.
+
+One motivation to take on such risk is that there are early hands-on experiments (also confirmed [Albert])
+that efforts to graph the content of knowledge base documents does lead to more succinct summerization.
+This effect can be argued for, as the intermediate representation is a natural information bottleneck.
+So while it might be ambitious to expect an ability to compute over
+the intermediate representation of a general knowledge base,
+relational querying and succinct representation can already be valuable in their own right.
+
+### Perception frames
+
+Any LLM model has a fixed context length. Most context lengths are 2k, up to 8k or even 32k tokens or beyond.
+There is a clear motivation to have longer context length, and many works try to extend it.
+These extensions come with an additional speed and memory cost, but it is an open question how
+the quality of the attention can degrade over longer context lengths.
+One outlier paper LongNet claims to achieve a context length of "1 billion tokens" (with diluted attention)
+and measures the quality of the attention for different context lenghts 
+with a perplexity measure (see Table 2 [LongNet2023](https://arxiv.org/pdf/2307.02486.pdf)).
+To our understanding these matters are far from settled by the community, and it is not our ambition to resolve them here.
+
+We can conclude however that we want our algorithm to work with a finite context length.
+
+
+
 [continue here]
 
 
