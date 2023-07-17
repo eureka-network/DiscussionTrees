@@ -24,4 +24,7 @@ class CurriculumAgent:
         )
         if mode not in ["auto", "manual"]:
             raise ValueError(f"mode {mode} is not supported")
+        
         self.mode = mode
+
+    

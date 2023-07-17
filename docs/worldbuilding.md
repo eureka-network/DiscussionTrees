@@ -2,7 +2,6 @@
 date: 12 July 2023
 status: draft proposal v0.1
 author: Benjamin Bollen
-copyright: © 2023. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
 ---
 
 # Building structured world models from unstructured data
@@ -99,8 +98,8 @@ and be careful about the order in which they get asked.
 While some types of questions become specific to the content of the text body,
 we propose that initial grounding questions are more generic.
 
-Specifically we find that it is first important to build up references.
-While text is sequential, the referred to context is often not the immediately
+Specifically we find that it is first important to build up references and relations between segments of text.
+While text is sequential, the referred-to context is often not the immediately
 preceding one, or even in the same document. By building up a representation
 of where and how different segments of the text body are related, we can already
 build a graph that allows us retrieve relevant context, or cluster and summarize
@@ -120,7 +119,30 @@ representation. Other work also shows that while GPT4 can parse and reason over
 linear, or tree-like graph relations, reasoning capabilities sharply decline 
 for dense (and especially looped) relations [Momennejad, Santa Fe workshop 2023](https://www.youtube.com/watch?v=FQiAm5eSBIc).
 To prelude onto later work, models like GPT4 (but not exclusively) can write
-python code to reason over more complicated structures [Momennejad 2023, Voyager 2023].
+python code to reason over more complicated structures [Momennejad 2023, Voyager 2023], rather than to ask the model directly to do the reasoning.
+
+After focusing a lens on the referential structure, and the content, more lenses can
+be applied. Some may depend on the context and content of the text body.
+In particular some lenses can also be meta-questions.
+For example, who are the authors of the documents? In the use-case of discussion
+forums, this can play a particularly relevant role, to map and build a model
+of the contributors to the discussion.
+Another example of a different world building effort can be to, given a desired goal,
+try to conclude sensible options towards that goal; or in the context of governance,
+try to draw the consensus landscape of where support lies.
+
+It is important to stress that the original goal of this project (still) is to,
+first, only achieve the first lens: can we better compress the structure of text
+body; and, second, whether we can leverage an LLM to be able to generalise this ability
+and improve its skills to do so. Skills in the sense of [Voyager2023].
+
+It looks like the second lens of structuring the content can bear fruit too.
+For each lens though, we have to understand the required capabilities and how
+performance of the LLM capability can be estimated algorithmically.
+
+## Pseudo-code for perception frames, groups and levels across lenses
+
+[continue here]
 
 
- 
+ copyright © 2023. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
