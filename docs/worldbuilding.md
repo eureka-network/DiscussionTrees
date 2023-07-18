@@ -279,7 +279,41 @@ and an "IN" relation for each unit to the document node itself.
 
 ### step 2: referencing basic units
 
+Already from the very start we need to be more precise on how we ask the question,
+or what our objective is, when wanting to reference between basic units.
 
+For discussion forums there is a clear objective, and we'll describe this first.
+For general documents, we propose that analogous approach can be one lens of structure
+on the paragraphs, but likely not the unique way to approach this.
+
+#### Discussion forums
+
+Our objective is to compress the discussion from a linear thread into a shallow
+tree of the main arguments that have been brought forward (for, against, tangential, ...)
+in the context of the initial post that sets the topic.
+
+In discussion forums we actually get even more labelled data: replies or quotes.
+Therefore to some approximation we can assume that for a given post (basic unit),
+we only need to check its relation to:
+- the initial post
+- the preceding post
+- or, if applicable, the post it replies to or quotes from
+
+This way we have reduced the problem to a two-unit problem, or a level 2 question.
+We can now try to extract a semantical evaluation between these two units, for example,
+a simple prompt  to the LLM can read:
+
+> Is this reply post in support or against the original post, or undetermined?
+> Only reply with either ["SUPPORT", "AGAINST", "UNDETERMINED"]?
+
+This an initial binary approach, but already allows us to insert new relations
+the graph database.
+This way we start reforming the original linear graph
+into a shallower, denser tree structure of posts
+that support, expand, or argue against a preceding unit
+(the original post, or a deeper nested post).
+
+#### Knowledge-base documents
 
 
 
