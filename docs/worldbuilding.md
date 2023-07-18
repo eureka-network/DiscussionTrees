@@ -142,7 +142,7 @@ performance of the LLM capability can be estimated algorithmically.
 
 ## Pseudo-code for perception frames, groups and levels across lenses
 
-We will try to present a scaffold to put the findings together.
+We will present a scaffold to put our findings sofar together.
 At the same time, it is a scaffold and as such there will be pieces
 missing that we propose should be worked out and put in place.
 However, to learn we must take small incremental steps,
@@ -178,20 +178,18 @@ We can conclude however that we want our algorithm to work with a finite context
 and that we want to build representations for text bodies larger than that context length.
 
 Our (LLM's) attention is not only limited by the context length;
-also the specific world-building lens we current have "focuses our attention".
-On a philosophical note, only by having a goal to answer a specific question
-about the text buffer, can we build an "internal map" or representation;
-otherwise, the software is simply a (re-)recording device.
+also the specific world-building lens we have currently, "focuses our attention".
 
 These are the first two reasons (context length, and question-type) to introduce
 *perception frames*, or *frames*. Frames form a strict sequence such that
 we have a tool to order and preserve which questions we ask over which pieces of text
 from the text body.
 
-In one frame we consider one *group* of text at a given *level* with a set *world building question*.
+In one frame we consider one *group* of text at a given *level* 
+and with a given *world building question*.
 We will construct these three terms in what follows.
 
-In each additional frame we can navigate through full body of text,
+In each additional frame we can navigate through the full body of text,
 either by moving/jumping the location of the group,
 changing the level (roughly, zooming in or out), or by asking a different type of question.
 For initial implementations, we imagine to have very naive and hard-coded pathways.
@@ -201,7 +199,51 @@ as the intermediate representation.
 
 ### Groups
 
+We define a group to be a list of text segments from the text body, $g_i$.
 
+Much like the arguments to a function call (in most languages) we will assign meaning
+to the order of these text segments. The specific function will depend on the level
+and the question objective.
+
+Looking ahead, following [Voyager2023], our path to generalising the ability to build
+appropriate intermediate representations for novel text bodies, might even mean that
+we don't know these prompt functions upfront. In [Voyager2023] they leverage the LLM
+to write and refine (python / prompt) functions to learn and compose new skills.
+
+For now though, a group is as simple an interface can be, and we can use this interface
+to focus the attention as we build the intermediate representation.
+
+### Levels
+
+We will assume here that we deal with text bodies that are mostly well-formated strings.
+Most language is written as punctuated sentences; if it concerns HTML, the HTML syntax is
+correctly structured.
+
+In the narrow use-case of discussions on forums, we have a starting advantage:
+the conversation is already structured as posts (which can explicitly be segmented from the HTML).
+In the case of general documents, our proposal is to use paragraphs as a *basic unit of text*.
+
+We can propose the following three levels:
+- level 0: group elements are sentences.
+- level 1: group elements are basic units (ie. posts or paragraphs); and we consider only one unit.
+- level 2+: group elements are still the basic units, but we have at least two of them.
+
+We note that we opt for this notation, while in many ways it is less optimal.
+First, while the authors would argue that it will be useful to be able to zoom into
+specific sentences as the most granular level, thusfar it has become surprisingly difficult
+to translate this into practical demonstrations that work.
+So initially we will not consider level 0 with sentence level granularity.
+In this situation, we could simplify the notation to:
+> "a group of level $n$ has $n$ basic units".
+
+This way a group of level $n$ is like an $n$-point function, that touches the text body
+at $n$ points.
+
+Basically, there is no over-arching principle that says this is the right approach;
+rather this is a glove that fits the various experiments we've conducted so far
+and as such is helpful to structure the code.
+We elaborated on the concept of a "level 0", mostly to mark a placeholder for something
+we don't know yet how to approach, but think is worth remembering for later.
 
 [continue here]
 
