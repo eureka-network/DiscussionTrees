@@ -315,9 +315,133 @@ that support, expand, or argue against a preceding unit
 
 #### Knowledge-base documents
 
+For an article or larger document, we don't have the explicit labelling between two units.
 
+In general if we would have no additional assumptions, other than the positional order
+of the paragraphs, we would assume to try to query each paragraph to its preceding ones.
+Clearly this isn't how people structure ideas in articles,
+so we can venture to assume more structure.
+Before we do, as a side-note, it would also not be clear to the authors
+what a sensible prompt function can be for two arbitrary paragraphs from a document
+to determine a possible relation between them (ie. this would be bound to have false postives or negatives).
 
-[continue here]
+So one proposal can be to assume that the document is properly introducing its concepts,
+before expanding on them. This would suggest we can model the document as a tree.
 
+For a given paragraph we can query whether it is a semantical elaboration on the previous
+paragraph (of some finite list of possible relations).
+If the current unit is not a deepening of this branch,
+then we can go up the tree and find the first node for which the semantical evaluation
+does provide a relation and branch the tree there.
 
- copyright © 2023 Benjamin Bollen. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
+**Note**: this is not yet tested by experimentation, unlike the case for discussion forums;
+but rather presented as one ideation, to help generalise to this new application.
+
+**Second note**: the original aim of the project proposal was only to consolidate
+our findings on these two steps.
+The first objective is that by building a structured representation of the text body,
+we can now "compute" over it.
+We can semantically embed nodes; however, if they are close together in the tree representation
+that would not imply that their semantical embedding separately is close.
+Hence now we can coarse-grain a sub-tree by asking for a summary of the nodes and their relations.
+By doing this recursively we can have a high-level overview of a discussion
+or a document, and then expand it further down as the user wants to explore more.
+
+Conversely, if nodes are semantically close in embedding space, and close in the tree,
+they would likely be mergeable
+(this is to be explored further in cross-document referencing  / content building).
+
+### step 3: extracting content - entities and relations
+
+We've explored in the above a first lens of constructing a representation
+of how the different units of text related to each other.
+We did so at two levels, first unit-by-unit (with a normal parser),
+and then as a pair of two units, with an LLM as a semantically capable classifier.
+
+We return now again to a level 1 task, but change the lens.
+Now we can ask for each unit (led by [Albert]):
+
+> Based on the above generate a knowledge graph with the most important entities and relations.
+> Output the response as JSON and keep the entities and relations as concise as possible.
+> JSON:
+
+Promisingly, early tests with GPT4 are encouraging that forcing
+the structure of "entities" and their "relations" does produce a strong scaffolding
+for what was discussed in the text.
+
+It is likely that we would need to add (one)/(few)-shot learning examples,
+simply to enforce a stricter convention on how the fields in the JSON are used in the result.
+
+This has been manually tested both for knowledge base documents and for discussion forum posts,
+with success.
+
+They each have a slightly different complication though.
+As highlighted in the motivation, it is harder to qualify how for longer units
+on some runs some facts are either included or not (as we ask for the most important ones).
+One approach can therefore for knowledge base documents to not have too lengthy units,
+and ask for "complete" enumeration of the important entities and relations.
+
+However, for discussion posts, we have a natural unit of a post, and we don't want to
+complicate that.
+A second observation is more pronounced in discussion forums, than we expect it for
+knowledge base documents. It arises when different "authors"/"contributors" speak.
+They are likely to not use the exact same language, even though when taking posts
+together it is clear that entities might refer to the same thing.
+This observation brings us to step 4.
+
+### step 4: stitching content together
+
+In this last step, we are propose a solution to the above problem from step 3.
+It was also this proposal that motivated the effort
+to use this document to establish some language and get feedback on it.
+
+All the work to establish groups of level 1 and 2, and different lenses,
+in particular the initial structural lens, enables us to now consider the following:
+
+If for each unit we have extracted a representation of the form `(entities, relations)` (step 3),
+and from step 2 we have pair-wise relations between units, we can now venture at the following (crude draft).
+
+> Given the [structural relation] between [unitA as text] and [unitB as text],
+> what are the most important entities and relations that relate these two "units" [...]
+> as JSON:
+
+and we expect to get a new JSON graph of new entities and relations, but now taken over the context of both units.
+
+The challenge we have when considering them separately (both with the nature of LLMs, or the variability of language of authors),
+is that these entities are likely to not be verbatim matches. Conversely asking questions about the two graph structures
+did not return good results.
+Therefore we propose this approach, where we revert to the original text so that the model has the full joint context
+and we re-ask the question to extract entities and relations.
+
+However, we now have three objects $ER_{A}$, $ER_{B}$, and $ER_{A ∪ B}$ for unit $A$ and $B$.
+In particular we can expect the "meaningful" intersection of $E_A$ ∩ $E_{A ∪ B}$ to not be empty; likewise for $B$.
+
+So the proposal is that we can *semantically* embed (possibly with some additional description context, Albert?) the entities
+from both sets $E_A$, and $E_{A ∪ B}$, and identify those entities that are close in the semantical embedding space.
+Likewise for $E_B$, and $E_{A ∪ B}$, we can identify the matches.
+
+We can stitch together the entities and their relations across the document.
+
+The proposed result of this effort is that we now can overlay the structured graph (and its coarse-grained summerization),
+with a content graph of entities and their relations, properly connected and traversable.
+
+*If that all works* - equally we can try to coarse-grain this content graph along the referential graph.
+
+## Soft conclusion
+
+Most important objective would be to have build two types of intermediate representations:
+how the text itself is structured, and how the content is built up across that structure.
+
+As said ad nauseam, this is an intermediate representation, and it is then intended to be used
+by an application to better query (eg. see multi-hop query [Jorge]).
+
+From here there are at least two paths: one pertains to additional lenses, eg. attempting
+to model the authors that have contributed to the text body. etc.
+
+A second angle is then to try to explore this representation for inconsistencies
+and appropriately define measures, such that the application can handle uncertainty,
+or flag humans for review of its internal "understanding".
+
+[paused for comments here]
+
+copyright © 2023 Benjamin Bollen. This work is licensed under a [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
