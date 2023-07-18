@@ -245,6 +245,44 @@ and as such is helpful to structure the code.
 We elaborated on the concept of a "level 0", mostly to mark a placeholder for something
 we don't know yet how to approach, but think is worth remembering for later.
 
+## The approach
+
+### step 1: parsing basic units
+
+Given a text body, we segment it into *basic units*.
+Within one document units are sequential, but clearly we lack an ordering
+across documents.
+
+In the use-case of a discussion forum we can treat threads as different documents,
+where the posts are the basic units. In this case, we do have an additional time-ordering,
+but we will ignore this: different people have not read all posts as soon as they are posted.
+Similarly documents might be written at a certain time, and could be ordered;
+but also here, a given author will not have read all documents written prior to their publishing date.
+
+So we have different sequences of units, each built from a document (or thread) - by a standard parsing code.
+We will come back to cross-document / cross-thread considerations once we've succeeded for intra-documents.
+
+This step is "level 1 for structure building", effectively for free, completed with normal parsers.
+In the context of documents, where the basic unit is a paragraph this is rather underwhelming.
+While paragraphs in a well written text should express one point, ideas will likely elaborate over
+multiple paragraphs, and higher order groups (or $n$-point functions) might be needed to bring it into scope.
+
+In the context of discussion forums, however, we're given better "labelled data" as one post
+is one contribution to the thread.
+
+Nonetheless, by not relying on the LLM for the very first pass (level 1, structure),
+we have a stable basis to start building up from.
+
+We can store these units in the graph database with a $position$ in a $documentId$.
+We add the "FOLLOWS" relation between two subsequent posts in the document;
+and an "IN" relation for each unit to the document node itself.
+
+### step 2: referencing basic units
+
+
+
+
+
 [continue here]
 
 
