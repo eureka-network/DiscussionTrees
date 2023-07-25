@@ -1,10 +1,10 @@
 from .neo4j_reader import Neo4jReader
 from .context_agent import ContextAgent
 from .context_classifier import ContextClassifier
+from langchain import PromptTemplate
 
 
-def group_one_template_message(message: str) -> str:
-    return f"""Is this reply post: 
+GROUP_ONE_TEMPLATE_PROMPT = """Is this reply post: 
             
             ---
                 {message}
@@ -15,8 +15,7 @@ def group_one_template_message(message: str) -> str:
             """
 
 
-def group_two_template_message(message_1: str, message_2: str) -> str:
-    return f"""
+GROUP_TWO_TEMPLATE_PROMPT = """
         Is this reply post:
 
         ---
@@ -33,21 +32,10 @@ def group_two_template_message(message_1: str, message_2: str) -> str:
     """
 
 
-def group_level_template_message(*args) -> str:
-    match len(args):
-        case 1:
-            message = args[0]
-            group_one_template_message(message)
-        case 2:
-            message_1 = args[0]
-            message_2 = args[1]
-            group_two_template_message(message_1, message_2)
-        case _:
-            raise ValueError(
-                "Invalid number of *args, currently only supported either 1 or 2.")
-
-
 class Frame:
+    _internal_message = {1: GROUP_ONE_TEMPLATE_PROMPT,
+                         2: GROUP_TWO_TEMPLATE_PROMPT}
+
     def __init__(self, height: int, level: int, group: list[str], agent: ContextAgent):
         self.height = height
         if level in [1, 2] & len(group) == level:
@@ -58,9 +46,21 @@ class Frame:
                 "Invalid level, supported values are either 1 or 2, for now.")
         self._agent = agent
 
+    def _generate_prompt(self) -> str:
+        prompt_message = self._internal_message[self._level]
+        prompt = PromptTemplate(prompt_message)
+        if self._level == 1:
+            return prompt.format(message=self._group[0])
+        else:
+            # check validity: at this point, we are guaranteed from the initialization
+            # logic that we can't have level != len(group) and len must be either [1, 2]
+            return prompt.format(message_1=self._group[0], message_2=self._group[1])
+
     def execute_group(self) -> ContextClassifier:
         """Executes a `ContextAgent` on a specific group over some level. The agent
             is responsible for classifying the given group context at the current level"""
 
-        message = group_level_template_message(
-            self._group[0]) if self._level == 1 else group_level_template_message(self._group[0], self._group[1])
+        prompt = self._generate_prompt()
+
+        classification_class = self._agent.classify_context(prompt)
+        return classification_class
