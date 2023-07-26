@@ -1,6 +1,6 @@
 name: dt
 dependencies:
-  - python=3.8
+  - python=3.10
   - requests
   - beautifulsoup4
   - lxml

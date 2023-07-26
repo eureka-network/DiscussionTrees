@@ -6,6 +6,7 @@ class ContextClassifier(Enum):
     AGAINST = 2
     UNDETERMINED = 3
 
+    @classmethod
     def from_message(cls, message: str):
         match message.lower():
             case "supports" | "support":
@@ -14,6 +15,9 @@ class ContextClassifier(Enum):
                 return cls.AGAINST
             case "undetermined":
                 return cls.UNDETERMINED
+            case _:
+                raise ValueError(
+                    "Invalid message, should be of the form ['SUPPORT', 'AGAINST', 'UNDETERMINED']")
 
     def to_string(self) -> str:
         match self:
