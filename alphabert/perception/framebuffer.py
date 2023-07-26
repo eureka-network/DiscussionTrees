@@ -47,12 +47,17 @@ class FrameBuffer:
         # For now, we stay on level 1, and simply iterate over all the posts
         original_post_id = 1
         with self._driver.session() as session:
-            query = f"""
-                     MATCH (p1:Post {id: $post_id})
-                     MATCH (p2:Post {id: $original_post_id_2})
-                     MERGE (p1)-[:{relation}]->(p2)
+            query = """
+                        MATCH (p1:Post {id: $post_id})
+                        MATCH (p2:Post {id: $original_post_id})
+                        MATCH (t:Thread {id: $thread_id})
+                        WHERE (p1)-[:IN]->(t) AND (p2)-[:IN]->(t)
                     """
-            session.run(query, post_id_1=post_id, post_id_2=original_post_id)
+            query += f"""
+                        MERGE (p1)-[:{relation}]->(p2)
+                    """
+            session.run(query, post_id_1=post_id,
+                        post_id_2=original_post_id, thread_id=self.thread_id)
 
     def get_next_group(self, new_height: int):
         # for now stay on level 1 and simply iterate over all the posts
