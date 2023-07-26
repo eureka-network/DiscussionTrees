@@ -57,6 +57,7 @@ class FrameBuffer:
             query += f"""
                         MERGE (p1)-[:{relation}]->(p2)
                     """
+            print(f"FLAG: DEBUG {query}")
             session.run(query, post_id_1=post_id,
                         post_id_2=original_post_id, thread_id=self.thread_id)
 
