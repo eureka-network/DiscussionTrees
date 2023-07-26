@@ -2,6 +2,7 @@
 
 from langchain.chat_models import ChatOpenAI
 
+
 class CurriculumAgent:
     def __init__(
         self,
@@ -24,7 +25,5 @@ class CurriculumAgent:
         )
         if mode not in ["auto", "manual"]:
             raise ValueError(f"mode {mode} is not supported")
-        
-        self.mode = mode
 
-    
+        self.mode = mode

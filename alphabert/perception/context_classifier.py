@@ -14,3 +14,14 @@ class ContextClassifier(Enum):
                 return cls.AGAINST
             case "undetermined":
                 return cls.UNDETERMINED
+
+    def to_string(self) -> str:
+        match self:
+            case self.SUPPORTS:
+                return "SUPPORTS"
+            case self.AGAINST:
+                return "AGAINST"
+            case self.UNDETERMINED:
+                return "UNDETERMINED"
+            case _:
+                raise ValueError("Invalid state")
