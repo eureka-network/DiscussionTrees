@@ -6,6 +6,11 @@ class Builder:
         # perception
         self.frame_buffer = FrameBuffer()
 
+    def run(
+        self,
+    ):
+        
+
     def step(self):
         
         self.frame_buffer.step()

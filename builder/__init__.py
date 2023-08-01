@@ -23,25 +23,32 @@ def load_llm():
     
     return OpenAI(openai_api_key=OPENAI_API_KEY)
 
-if __name__ == "__main__": 
-    llm = load_llm()
-
-    neo4j = Neo4jReader('neo4j://localhost:7687',
-                        'neo4j', 'IlGOk+9SoTmmeQ==')
+async def main():
     
-    # threads = neo4j.get_threads()
-    # print(f"number of threads: {len(threads)}")
-    # for thread in threads:
-    #     print(f"thread: {thread}")
 
-    # thread: <Record id='320fff84' title='[SEP #5] Redistributing Unredeemed Tokens From User Airdrop Allocation' datePublished='2022-12-27T12:47:48+00:00'>
-    # posts = neo4j.get_posts_from_thread('320fff84')
-    # print(f"number of posts: {len(posts)}")
-    # for post in posts:
-    #     print(f"post: {post['position']} {post['date']} {post['id']}")
 
-    asyncio.run(run_agent())
-    opening_post = neo4j.get_positioned_post('320fff84', str(1))
-    print(f"opening post: {opening_post[0]['content']}")
+if __name__ == "__main__": 
+    asyncio.run(main())
+    # llm = load_llm()
 
-    neo4j.close()
+    # builder = new Builder()
+
+    # neo4j = Neo4jReader('neo4j://localhost:7687',
+    #                     'neo4j', 'IlGOk+9SoTmmeQ==')
+    
+    # # threads = neo4j.get_threads()
+    # # print(f"number of threads: {len(threads)}")
+    # # for thread in threads:
+    # #     print(f"thread: {thread}")
+
+    # # thread: <Record id='320fff84' title='[SEP #5] Redistributing Unredeemed Tokens From User Airdrop Allocation' datePublished='2022-12-27T12:47:48+00:00'>
+    # # posts = neo4j.get_posts_from_thread('320fff84')
+    # # print(f"number of posts: {len(posts)}")
+    # # for post in posts:
+    # #     print(f"post: {post['position']} {post['date']} {post['id']}")
+
+    # asyncio.run(run_agent())
+    # opening_post = neo4j.get_positioned_post('320fff84', str(1))
+    # print(f"opening post: {opening_post[0]['content']}")
+
+    # neo4j.close()
