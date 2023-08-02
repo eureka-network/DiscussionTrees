@@ -72,12 +72,15 @@ def extract_title(response: Response):
 #     return date_published
 
 # Discourse puts a unique identifier in the URL for easy lookup. Get it.
+
+
 def extract_identifier(url):
     """Extracts unique thread identifier from URL."""
     try:
         return re.search(r"/(\d+)(\?|$)", url).group(1)
     except AttributeError:
         return "No identifier found in URL."
+
 
 def extract_posts(response: Response):
     # selector = Selector(response)
@@ -99,6 +102,8 @@ def make_safe_identifier(input_str: str) -> str:
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
+
+
 def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
@@ -117,6 +122,24 @@ def extract_core_from_post(post):
             'content': post_content,
             'datePublished': post_datePublished,
             'position': post_position}
+
+
+def extract_block_quotes_from_post(post):
+    quotes = post.css('aside.quote')
+    output = []
+    for quote in quotes:
+        quote_content = quote.css('blockquote p::text').get()
+        data_username = quote.attrib.get('data-username')
+
+        if quote_content is None:
+            # ignore quotes without content
+            continue
+
+        output.append({
+            'quote_content': quote_content,
+            'data_username': data_username,
+        })
+    return output
 
 
 class DiscourseSpider(scrapy.Spider):
@@ -170,6 +193,10 @@ class DiscourseSpider(scrapy.Spider):
             post_id = f"{thread_id}-{post_core['position']}"
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
+            # get quotes
+            block_quotes = extract_block_quotes_from_post(post)
+            neo4j.block_quotes(
+                post_core['author'], post_id, post_core['content'], block_quotes)
 
         # run over the dictionary to look up subsequent pairs
         for position, post_id in post_positions_dict.items():
@@ -229,3 +256,25 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
+
+    def block_quotes(self, username, post_id, post_content, block_quotes):
+        for quote in block_quotes:
+            block_quote_username = quote['data_username']
+            block_quote_content = quote['quote_content']
+
+            with self._driver.session() as session:
+                query = """
+                MATCH (u:User {name: $username})
+                MATCH (bu:User {name: $block_quote_username})
+                MATCH (p:Post {id: $post_id, content: $post_content})
+                MERGE (q:Quote {content: $block_quote_content})
+                MERGE (u)-[:POSTED]->(p)
+                MERGE (bu)-[:POSTED_QUOTE]->(q)
+                MERGE (q)-[:QUOTE]->(p)
+                """
+                session.run(query,
+                            username=username,
+                            block_quote_username=block_quote_username,
+                            post_id=post_id,
+                            post_content=post_content,
+                            block_quote_content=block_quote_content)
