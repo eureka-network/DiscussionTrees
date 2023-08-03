@@ -58,8 +58,8 @@ class FrameBuffer:
                         MERGE (p1)-[:{relation}]->(p2)
                     """
             print(f"FLAG: DEBUG {query}")
-            session.run(query, post_id_1=post_id,
-                        post_id_2=original_post_id, thread_id=self.thread_id)
+            session.run(query, post_id=post_id,
+                        original_post_id=original_post_id, thread_id=self.thread_id)
 
     def get_next_group(self, new_height: int):
         # for now stay on level 1 and simply iterate over all the posts

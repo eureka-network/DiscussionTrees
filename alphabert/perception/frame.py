@@ -60,6 +60,6 @@ class Frame:
             is responsible for classifying the given group context at the current level"""
 
         prompt = self._generate_prompt()
-
+        print(f"FLAG: PROMPT = {prompt}")
         classification_class = self._agent.classify_context(prompt)
         return classification_class
