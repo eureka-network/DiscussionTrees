@@ -1,5 +1,7 @@
 from .frame import Frame
-from .neo4j_reader import Neo4jReader
+from ..neo4j.neo4j_reader import Neo4jReader
+from ..neo4j.neo4j_writer import Neo4jWriter
+
 
 class FrameBuffer:
 
@@ -8,9 +10,11 @@ class FrameBuffer:
         self.height: int = 0
         self.terminated: bool = False
         self.frames: list[Frame] = []
-        self.current_level = 1 # 0: intra-post, ie. sentences; 1 post-level; 2 inter-posts; possibly 3. threads
-        self.neo4j_reader = Neo4jReader('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
-    
+        # 0: intra-post, ie. sentences; 1 post-level; 2 inter-posts; possibly 3. threads
+        self.current_level = 1
+        self.neo4j_reader = Neo4jReader(
+            'neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
+
     def step(self):
         if self.terminated:
             return
@@ -32,4 +36,3 @@ class FrameBuffer:
     def get_next_group(self, new_height: int):
         # for now stay on level 1 and simply iterate over all the posts
         return self.neo4j_reader.get_positioned_post(self.thread_id, new_height)
-        

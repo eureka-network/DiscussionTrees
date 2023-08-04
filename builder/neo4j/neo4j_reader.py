@@ -1,6 +1,7 @@
 from neo4j import GraphDatabase
 from typing import Optional
 
+
 class Neo4jReader:
     def __init__(self, uri: str, user: str, password: str):
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
@@ -17,7 +18,7 @@ class Neo4jReader:
             result = session.run(query)
             # iterate over the stream before exiting the session
             return list(result)
-        
+
     def get_posts_from_thread(self, thread_id: str):
         with self._driver.session() as session:
             query: str = """
@@ -34,10 +35,14 @@ class Neo4jReader:
         with self._driver.session() as session:
             # assume position is unique in the thread
             query: str = """
-                            MATCH (p:Post {position: $post_position})-[:IN]->(t:Thread {id: $thread_id})
+                            MATCH (p:Post)-[:IN]->(t:Thread {id: $thread_id})
+                        """
+            query += f" WHERE p.position='{post_position}'"
+            query += """
                             RETURN p.id as id, p.content as content, p.date as date, p.position as position
                             LIMIT 1
                         """
-            result = session.run(query, thread_id=thread_id, post_position=post_position)
+            result = session.run(query, thread_id=thread_id,
+                                 post_position=post_position)
             # retrieve the first result and return post, or None if no result is found
-            return result.single()[0]
+            return result.single()['content']

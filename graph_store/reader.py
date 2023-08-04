@@ -5,10 +5,11 @@ Reader class for neo4j DB.
 from neo4j import GraphDatabase
 from .connection import ConnectionSingleton
 
+
 class Reader:
     def __init__(self, connection: ConnectionSingleton):
         self._connection = connection
-    
+
     # todo: deprecate for lazy evaluations only
     def get_all_documents(self):
         query: str = """

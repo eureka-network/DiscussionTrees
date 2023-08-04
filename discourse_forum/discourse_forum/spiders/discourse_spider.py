@@ -72,12 +72,15 @@ def extract_title(response: Response):
 #     return date_published
 
 # Discourse puts a unique identifier in the URL for easy lookup. Get it.
+
+
 def extract_identifier(url):
     """Extracts unique thread identifier from URL."""
     try:
         return re.search(r"/(\d+)(\?|$)", url).group(1)
     except AttributeError:
         return "No identifier found in URL."
+
 
 def extract_posts(response: Response):
     # selector = Selector(response)
@@ -99,6 +102,8 @@ def make_safe_identifier(input_str: str) -> str:
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
+
+
 def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))

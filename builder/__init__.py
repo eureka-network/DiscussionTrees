@@ -1,8 +1,8 @@
 from .builder import Builder
 
-from dotenv import load_dotenv
 import os
-# from langchain.llms import OpenAI
+from dotenv import load_dotenv
+from langchain.llms import OpenAI
 # from langchain.prompts import PromptTemplate
 
 # import asyncio
@@ -15,19 +15,20 @@ import os
 #         print("running agent")
 #         time.sleep(5)
 
+
 def load_llm():
     """Creates a new OpenAI LLM instance"""
     load_dotenv()
 
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    
+
     return OpenAI(openai_api_key=OPENAI_API_KEY)
 
+
 async def main():
-    
+    print("To be implemented")
 
-
-if __name__ == "__main__": 
+if __name__ == "__main__":
     asyncio.run(main())
     # llm = load_llm()
 
@@ -35,7 +36,7 @@ if __name__ == "__main__":
 
     # neo4j = Neo4jReader('neo4j://localhost:7687',
     #                     'neo4j', 'IlGOk+9SoTmmeQ==')
-    
+
     # # threads = neo4j.get_threads()
     # # print(f"number of threads: {len(threads)}")
     # # for thread in threads:
