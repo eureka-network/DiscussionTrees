@@ -13,7 +13,6 @@ import scrapy
 from scrapy import Selector
 
 from neo4j import GraphDatabase
-import time
 
 SITEMAP_REQUEST_CONNECT_TIMEOUT = 5
 SITEMAP_REQUEST_READ_TIMEOUT = 10
