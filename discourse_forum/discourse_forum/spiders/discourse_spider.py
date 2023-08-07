@@ -13,6 +13,7 @@ import scrapy
 from scrapy import Selector
 
 from neo4j import GraphDatabase
+import time
 
 SITEMAP_REQUEST_CONNECT_TIMEOUT = 5
 SITEMAP_REQUEST_READ_TIMEOUT = 10
@@ -72,12 +73,15 @@ def extract_title(response: Response):
 #     return date_published
 
 # Discourse puts a unique identifier in the URL for easy lookup. Get it.
+
+
 def extract_identifier(url):
     """Extracts unique thread identifier from URL."""
     try:
         return re.search(r"/(\d+)(\?|$)", url).group(1)
     except AttributeError:
         return "No identifier found in URL."
+
 
 def extract_posts(response: Response):
     # selector = Selector(response)
@@ -99,6 +103,8 @@ def make_safe_identifier(input_str: str) -> str:
     return s
 
 # return first four bytes of sha3 hash of unique identifier string
+
+
 def get_identifier(identifier_string: str):
     k = sha3.keccak_256()
     k.update(identifier_string.encode('utf-8'))
@@ -117,6 +123,14 @@ def extract_core_from_post(post):
             'content': post_content,
             'datePublished': post_datePublished,
             'position': post_position}
+
+
+def get_post_id(thread_id: str, post_position: int):
+    return f"{thread_id}-{post_position}"
+
+
+def get_position_from_post_id(post_id: str):
+    return int(post_id.split('-')[1])
 
 
 class DiscourseSpider(scrapy.Spider):
@@ -167,15 +181,9 @@ class DiscourseSpider(scrapy.Spider):
             if post_core['author'] is None:
                 # TODO: catch this edge case appropriately
                 continue
-            post_id = f"{thread_id}-{post_core['position']}"
+            post_id = get_post_id(thread_id, post_core['position'])
             post_positions_dict[post_core['position']] = post_id
             neo4j.create_post(post_id, post_core, thread_id, thread_core)
-
-        # run over the dictionary to look up subsequent pairs
-        for position, post_id in post_positions_dict.items():
-            preceding_post_id = post_positions_dict.get(str(int(position)-1))
-            if preceding_post_id:
-                neo4j.follow_post(preceding_post_id, post_id)
 
         # Get the next page link
         next_page = response.css('a[rel="next"]::attr(href)').get()
@@ -188,6 +196,25 @@ class DiscourseSpider(scrapy.Spider):
             except ValueError as e:
                 print(
                     f"Failed to create request for next page: {e}")
+        else:
+            # if there is no next_page to follow, we simply
+            # add the FOLLOWS relationship:
+            positions = neo4j.get_all_post_positions(thread_id)
+            post_count = len(positions)
+
+            if post_count >= 2:
+                for i in range(post_count - 1):
+                    previous_position = positions[i]
+                    current_position = positions[i + 1]
+
+                    previous_post_id = get_post_id(
+                        thread_id, previous_position)
+                    current_post_id = get_post_id(thread_id, current_position)
+
+                    neo4j.follow_post(previous_post_id, current_post_id)
+
+        # close the neo4j db connection
+        neo4j.close()
 
 
 class Neo4jService(object):
@@ -219,6 +246,7 @@ class Neo4jService(object):
                         thread_id=thread_id,
                         thread_title=thread_core['title'],
                         thread_discourse_id=thread_core['discourse_id'])
+            self.close()
 
     def follow_post(self, previous_post_id, current_post_id):
         with self._driver.session() as session:
@@ -229,3 +257,18 @@ class Neo4jService(object):
             """
             session.run(query, previous_post_id=previous_post_id,
                         current_post_id=current_post_id)
+        self.close()
+
+    def get_all_post_positions(self, thread_id: int) -> list[int]:
+        """Returns a list of all post positions from a thread."""
+        with self._driver.session() as session:
+            query = """
+                MATCH (p:Post)-[:IN]->(t:Thread {id: $thread_id})
+                WITH p
+                ORDER BY p.position ASC
+                RETURN p.position as position
+            """
+            result = session.run(query, thread_id=thread_id)
+            positions = [int(record['position']) for record in result]
+            positions.sort()
+            return positions
