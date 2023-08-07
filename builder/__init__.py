@@ -1,11 +1,11 @@
-from .builder import Builder
+# from .builder import Builder
 
-from dotenv import load_dotenv
-import os
+# from dotenv import load_dotenv
+# import os
 # from langchain.llms import OpenAI
 # from langchain.prompts import PromptTemplate
 
-# import asyncio
+
 # import time
 
 # async def run_agent():
@@ -15,20 +15,16 @@ import os
 #         print("running agent")
 #         time.sleep(5)
 
-def load_llm():
-    """Creates a new OpenAI LLM instance"""
-    load_dotenv()
 
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# def load_llm():
+#     """Creates a new OpenAI LLM instance"""
+#     load_dotenv()
+
+#     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     
-    return OpenAI(openai_api_key=OPENAI_API_KEY)
-
-async def main():
-    
+#     return OpenAI(openai_api_key=OPENAI_API_KEY)
 
 
-if __name__ == "__main__": 
-    asyncio.run(main())
     # llm = load_llm()
 
     # builder = new Builder()

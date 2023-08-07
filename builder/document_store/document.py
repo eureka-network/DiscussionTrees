@@ -1,3 +1,5 @@
+from ..graph_store import Reader
+
 class Document:
     pass
     # def __init__(self, db_connection, identifier: str):

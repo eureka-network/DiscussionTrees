@@ -1,3 +1,5 @@
+from ..perception import FrameBuffer
+
 class Builder:
     def __init__(
         self,
@@ -9,8 +11,7 @@ class Builder:
     def run(
         self,
     ):
-        
+        pass
 
     def step(self):
-        
         self.frame_buffer.step()
