@@ -59,12 +59,16 @@ class ContextClassifier(Enum):
 
 
 class ClassifierAgent:
-    def __init__(self, model_name="gpt-3.5-turbo", temperature=0, request_timeout=120):
+    def __init__(self, **kwargs):
         load_dotenv()
         OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-        self.llm = ChatOpenAI(model_name=model_name, temperature=temperature,
-                              request_timeout=request_timeout, openai_api_key=OPENAI_API_KEY)
+        kwargs.setdefault("model_name", "gpt-3.5-turbo")
+        kwargs.setdefault("temperature", 0)
+        kwargs.setdefault("request_timeout", 120)
+
+        self.llm = ChatOpenAI(model_name=kwargs["model_name"], temperature=kwargs["temperature"],
+                              request_timeout=kwargs["request_timeout"], openai_api_key=OPENAI_API_KEY)
 
     def classify_context(self, message_1: str, message_2: str) -> ContextClassifier:
         prompt_message = generate_classifier_prompt(message_1, message_2)

@@ -1,4 +1,4 @@
-from .perception.classifier_frame_buffer import ClassifierFrameBuffer
+from .perception.frame_buffer import FrameBuffer
 
 
 class Builder:
@@ -7,7 +7,7 @@ class Builder:
     ):
         print("Hello, world !")
         # perception
-        self.frame_buffer = ClassifierFrameBuffer()
+        self.frame_buffer = FrameBuffer()
 
     def run(
         self,
