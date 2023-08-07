@@ -1,16 +1,12 @@
-from ..perception import FrameBuffer
+from .perception import FrameBuffer
 
 class Builder:
-    def __init__(
-        self,
-    ):
-        print("Hello, world !")
+    def __init__(self):
+        print("Hello, builder !")
         # perception
         self.frame_buffer = FrameBuffer()
 
-    def run(
-        self,
-    ):
+    def run(self):
         pass
 
     def step(self):
