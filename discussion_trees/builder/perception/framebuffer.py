@@ -1,5 +1,5 @@
 from .frame import Frame
-from ..graph_store import Graph
+from discussion_trees.graph_store import Graph
 
 class FrameBuffer:
 

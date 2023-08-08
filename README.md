@@ -19,6 +19,11 @@ docker compose up
 ```
 to start a neo4j instance. Data and logs will be written in `./neo4j/data` and `./neo4j/logs` respectively. Delete the content manually for now to reset.
 
+To run the builder, run
+```
+./dtree.sh build
+```
+
 ### scraping data into neo4j
 
 In the mamba environment, from the root of the project

@@ -2,7 +2,7 @@
 Graph store connects to a neo4j instance to store the knowledge base and the constructed worlds.
 """
 
-# todo: restructure repo start the package at the top level of repository
+# todo: restructure repo start the package at the top level of repository; and lift graph store out of builder
 
 # Import the neo4j db reader
 from .reader import Reader

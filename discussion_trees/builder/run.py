@@ -4,8 +4,8 @@ from .builder import Builder
 from .config import BuilderConfig
 
 
-async def main():
-    print("Hello from main()")
+async def run_builder():
+    print("Hello from run_builder()")
     config = BuilderConfig()
     config.load_environment_variables() # explicitly load the environment variables
     print("API key: " + config.openai_api_key)
@@ -13,5 +13,9 @@ async def main():
     builder = Builder()
 
 
+def setup_builder():
+    asyncio.run(run_builder())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run_builder())
