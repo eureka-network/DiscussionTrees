@@ -8,9 +8,8 @@ async def run_builder():
     print("Hello from run_builder()")
     config = BuilderConfig()
     config.load_environment_variables() # explicitly load the environment variables
-    print("API key: " + config.openai_api_key)
-
-    builder = Builder()
+    print("TASK DOCUMENT: ", config.builder_task_document)
+    builder = Builder(config)
 
 
 def setup_builder():

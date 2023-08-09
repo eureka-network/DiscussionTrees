@@ -11,6 +11,9 @@ class BuilderConfig:
         load_dotenv()
         self._OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self._BUILDER_TASK_DOCUMENT = os.getenv("BUILDER_TASK_DOCUMENT")
+        self._NEO4J_URI = os.getenv("NEO4J_URI")
+        self._NEO4J_USER = os.getenv("NEO4J_USER")
+        self._NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
     @property
     def openai_api_key(self):
@@ -25,4 +28,16 @@ class BuilderConfig:
         if not hasattr(self, '_BUILDER_TASK_DOCUMENT'):
             self.load_environment_variables()
 
+        # return None if it is set to empty string
+        if self._BUILDER_TASK_DOCUMENT == "":
+            return None
+        # BUILDER_TASK_DOCUMENT can be None
         return self._BUILDER_TASK_DOCUMENT
+    
+    @property
+    def neo4j_credentials(self):
+        # todo: not clean
+        if not hasattr(self, '_NEO4J_URI'):
+            self.load_environment_variables()
+
+        return self._NEO4J_URI, self._NEO4J_USER, self._NEO4J_PASSWORD

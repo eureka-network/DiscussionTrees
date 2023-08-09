@@ -9,8 +9,7 @@ class FrameBuffer:
         self.terminated: bool = False
         self.frames: list[Frame] = []
         self.current_level = 1 # 0: intra-post, ie. sentences; 1 post-level; 2 inter-posts; possibly 3. threads
-        # self.neo4j_reader = Neo4jReader('neo4j://localhost:7687', 'neo4j', 'IlGOk+9SoTmmeQ==')
-    
+   
     def step(self):
         if self.terminated:
             return
