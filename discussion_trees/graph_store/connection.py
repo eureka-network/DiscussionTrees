@@ -21,13 +21,22 @@ class _Connection():
         self._user = user
         self._password = password
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
+        # this is super hacky and relies on not being misused in the code... 
+        # but I don't know if there's a proper way in Python and this is just a demo code
+        self.copies = 1
     
     def execute_query(self, query: str):
         with self._driver.session() as session:
             return session.run(query)
 
+    def clone(self):
+        self.copies += 1
+        return self
+
     def close(self):
-        self._driver.close()
+        self.copies -= 1
+        if self.copies == 0:
+            self._driver.close()
 
 # ConnectionSingleton ensures a single instance of the connection exists in the code
 class ConnectionSingleton(_Connection, metaclass=Singleton):

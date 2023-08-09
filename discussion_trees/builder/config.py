@@ -36,8 +36,11 @@ class BuilderConfig:
     
     @property
     def neo4j_credentials(self):
-        # todo: not clean
         if not hasattr(self, '_NEO4J_URI'):
             self.load_environment_variables()
+
+        assert self._NEO4J_URI is not None, "NEO4J_URI not set in env variables."
+        assert self._NEO4J_USER is not None, "NEO4J_USER not set in env variables."
+        assert self._NEO4J_PASSWORD is not None, "NEO4J_PASSWORD not set in env variables."
 
         return self._NEO4J_URI, self._NEO4J_USER, self._NEO4J_PASSWORD

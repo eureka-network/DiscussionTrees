@@ -12,7 +12,7 @@ class Builder:
             self._config.neo4j_credentials[2]) # password
 
         # perception
-        self.frame_buffer = FrameBuffer(self._config.builder_task_document, self._graph.new_reader())
+        self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)
 
     def run(self):
         pass

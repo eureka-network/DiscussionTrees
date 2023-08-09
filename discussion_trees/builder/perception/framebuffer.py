@@ -1,32 +1,33 @@
 from .frame import Frame
-from discussion_trees.graph_store import Graph
+from discussion_trees.graph_store import Reader, Graph
 
 class FrameBuffer:
 
-    def __init__(self, document_id: str = None, graph: Graph = None):
-        self.document_id: str = document_id
-        self.height: int = 0
-        self.terminated: bool = False
-        self.frames: list[Frame] = []
-        self.current_level = 1 # 0: intra-post, ie. sentences; 1 post-level; 2 inter-posts; possibly 3. threads
+    def __init__(self, graph_reader: Reader, task_document_id: str = None):
+        self._task_document_id: str = task_document_id
+        self._height: int = 0
+        self._terminated: bool = False
+        self._frames: list[Frame] = []
+        self._current_level = 1 # 0: intra-post, ie. sentences; 1 post-level; 2 inter-posts; possibly 3. threads
+        self._graph_reader = graph_reader
    
     def step(self):
-        if self.terminated:
+        if self._terminated:
             return
-        new_height = self.height + 1
+        new_height = self._height + 1
         group = self.get_next_group(new_height)
         if group is None:
             self.terminate_sequence()
             return
-        frame = Frame(self.height, self.current_level, group)
+        frame = Frame(self._height, self._current_level, group)
         self.frames.push(frame)
-        self.height = new_height
+        self._height = new_height
 
     def terminate_sequence(self):
-        self.terminated = True
+        self._terminated = True
 
     def close(self):
-        self.neo4j_reader.close()
+        self._graph_reader.close()
 
     def get_next_group(self, new_height: int):
         # for now stay on level 1 and simply iterate over all the posts
