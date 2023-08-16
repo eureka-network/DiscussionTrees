@@ -5,4 +5,4 @@ class Frame:
         self.group = group
 
     def execute_input(self, input: str):
-        print("I love Rust !")
+        print("continue here")
