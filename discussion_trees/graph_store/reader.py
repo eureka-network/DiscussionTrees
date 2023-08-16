@@ -17,3 +17,7 @@ class Reader:
                     """
         result = self._connection.execute_query(query)
         return list(result)
+    
+    def close(self):
+        self._connection.close()
+        pass

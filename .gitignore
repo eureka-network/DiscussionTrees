@@ -1,6 +1,9 @@
 # saved discourse files
 discourse-*.html
 
+# knowledge base source
+knowledge_base/*
+
 # python cache
 __pycache__/
 discourse_forum/discourse_forum/__pycache__/

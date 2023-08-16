@@ -21,7 +21,7 @@ to start a neo4j instance. Data and logs will be written in `./neo4j/data` and `
 
 To run the builder, run
 ```
-./dtree.sh build
+./scripts/dtree.sh build
 ```
 
 ### scraping data into neo4j
