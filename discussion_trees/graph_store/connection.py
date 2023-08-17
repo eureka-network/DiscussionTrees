@@ -25,9 +25,11 @@ class _Connection():
         # but I don't know if there's a proper way in Python and this is just a demo code
         self.copies = 1
     
-    def execute_query(self, query: str):
+    def execute_query(self, query: str, parameters: dict = None):
         with self._driver.session() as session:
-            return session.run(query)
+            # todo: for now we iterate all results with list()
+            #       we should expose an active lazy iterator later
+            return list(session.run(query, parameters))
 
     def clone(self):
         self.copies += 1
@@ -35,6 +37,7 @@ class _Connection():
 
     def close(self):
         self.copies -= 1
+        assert self.copies >= 0, "Connection closed too many times"
         if self.copies == 0:
             self._driver.close()
 

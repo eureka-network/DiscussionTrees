@@ -6,6 +6,8 @@ Graph store connects to a neo4j instance to store the knowledge base and the con
 
 # Import the neo4j db reader
 from .reader import Reader
+# Import the neo4j db writer
+from .writer import Writer
 # Import the graph class wrapping around neo4j connection
 from .graph import Graph
 

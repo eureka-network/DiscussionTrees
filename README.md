@@ -9,22 +9,16 @@ let's use mamba.
 then run
 ```
 mamba env create -f environment.yml
-conda activate dt
 ```
-to get into the environment.
 
-In a separate terminal run
-```
-docker compose up
-```
-to start a neo4j instance. Data and logs will be written in `./neo4j/data` and `./neo4j/logs` respectively. Delete the content manually for now to reset.
+## starting the builder
 
-To run the builder, run
+copy `.env.example` to `.env` and fill out the needed parameters, then run
 ```
 ./scripts/dtree.sh build
 ```
 
-### scraping data into neo4j
+### scraping data into neo4j (old, for discourse forums)
 
 In the mamba environment, from the root of the project
 ```
