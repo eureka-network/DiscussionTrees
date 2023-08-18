@@ -7,18 +7,27 @@ if [[ "$response" != "y" && "$response" != "Y" ]]; then
     exit 1
 fi
 
+# Get the directory of the current script
+SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Go up to root directory
+DIR="$( cd "$SCRIPTS_DIR/.." && pwd )"
+
+# Change to root directory
+cd "$DIR"
+
 # Stop docker-compose
 docker-compose down
 
 # Check if the neo4j directories exist before attempting to remove them, and preserve the .gitignore file
-if [ -d "../neo4j/data" ]; then
-    find ../neo4j/data -mindepth 1 ! -name '.gitignore' -exec rm -rf {} +
+if [ -d "./neo4j/data" ]; then
+    find ./neo4j/data -mindepth 1 ! -name '.gitignore' -exec rm -rf {} +
 else
     echo "Warning: ../neo4j/data directory not found!"
 fi
 
-if [ -d "../neo4j/logs" ]; then
-    find ../neo4j/logs -mindepth 1 ! -name '.gitignore' -exec rm -rf {} +
+if [ -d "./neo4j/logs" ]; then
+    find ./neo4j/logs -mindepth 1 ! -name '.gitignore' -exec rm -rf {} +
 else
     echo "Warning: ../neo4j/logs directory not found!"
 fi
