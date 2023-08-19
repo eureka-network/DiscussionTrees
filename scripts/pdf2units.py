@@ -1,46 +1,54 @@
-import sys
+import sys, re, os
 from pdfminer.high_level import extract_text
+
 
 def extract_text_from_pdf(pdf_path):
     # Extract text using pdfminer
     text = extract_text(pdf_path)
     # print(text[:3000])
-    check_arxiv_range = 40
+    check_arxiv_range = 150
+    initial_text = text[:check_arxiv_range]
 
-    # Split the text into blocks (assuming empty lines as separators)
-    blocks = [block.strip() for block in text.split("\n") if block.strip()]
-
-    blocks = reformat_arxiv_code(blocks[:check_arxiv_range])
+    arxiv_block, end_of_marker = reformat_arxiv(initial_text)
+    if arxiv_block is not None:
+        text = arxiv_block + text[end_of_marker:]
     
-    # for block in blocks[:20]:
-    #     print(block)
-    #     print("-" * 40)  # Separator for clarity
+    save_to_txt(text, pdf_path)
 
 
-def reformat_arxiv_code(first_blocks):
-    # Define a reasonable range to check for the arXiv pattern
+def save_to_txt(text, pdf_path):
+    # Derive the output filename from the pdf_path
+    base_name = os.path.splitext(pdf_path)[0]
+    txt_filename = base_name + ".txt"
 
+    with open(txt_filename, 'w', encoding='utf-8') as file:
+        file.write(text)
+
+
+def reformat_arxiv(text):
+    # Define the marker sequence
+    marker = ":\nv\ni\nX\nr\na"
     
-    # Reverse the order of blocks within the check range and merge into a single string
-    merged_blocks = ''.join(first_blocks[::-1])
-    print(f"merged_blocks: {merged_blocks}")
-     
-    # Check for the "arXiv:" pattern in the merged blocks (but in reverse order)
-    if "arXiv:" not in merged_blocks:
-        return None, 0
+    # Check if the marker sequence is in the text
+    if marker not in text:
+        return None
     
-    # Find the start and end indices of the "arXiv" pattern
-    start_index = merged_blocks.index("arXiv:")
-    end_index = start_index + len("arXiv:")
+    # Extract the portion of the text from the start up to the marker sequence
+    arxiv_portion = text[:text.index(marker) + len(marker)]
     
-    # Split the merged blocks back into individual blocks
-    after_arxiv = merged_blocks[end_index:]
-    print(f"after_arxiv: {after_arxiv}")
-    print(f"end_index: {end_index}")
-    print(f"start_index: {start_index}")
+    # Reverse the characters
+    reversed_arxiv = arxiv_portion[::-1]
+    
+    # Remove single newlines and convert double newlines to a whitespace
+    reformatted_arxiv = reversed_arxiv.replace("\n\n", " ").replace("\n", "")
 
-    # Return the reformatted blocks
-    return ["arXiv:", after_arxiv], start_index
+    # Remove spaces between square brackets
+    reformatted_arxiv = re.sub(r'(\[)\s*([^]]*?)\s*(\])',
+        lambda m: m.group(1) + m.group(2).replace(' ', '') + m.group(3), reformatted_arxiv)
+
+    # Return the reformatted arXiv portion followed by the rest of the text, 
+    # and the index of the end of the marker
+    return reformatted_arxiv, text.index(marker) + len(marker)
 
 
 if __name__ == "__main__":
