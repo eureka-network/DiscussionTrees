@@ -1,7 +1,7 @@
 import argparse
 
 from builder import setup_builder
-# from ingest import setup_ingest
+from ingest import setup_ingester
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
         setup_builder()
     elif args.command == "ingest":
         pass
-        # setup_ingest()
+        setup_ingester()
     else:
         print("Please select either 'build' or 'ingest' as a subcommand")
 
