@@ -13,7 +13,7 @@ DIR="$( cd "$SCRIPTS_DIR/.." && pwd )"
 cd "$DIR"
 
 # Check if the neo4j service for the specific project is running
-if ! docker-compose ps | grep -q "${PROJECT_NAME}_neo4j.*Up"; then
+if ! docker-compose ps | grep -q "${PROJECT_NAME}-neo4j-.*Up"; then
     echo "Starting docker-compose services..."
     docker-compose up -d
 else
@@ -32,6 +32,15 @@ fi
 
 # Append to the PYTHONPATH
 export PYTHONPATH="$DIR:$PYTHONPATH"
+
+# Check if Neo4j is ready
+echo "Waiting for Neo4j to be ready..."
+until python3 ./scripts/check_neo4j.py 2>/dev/null; do
+    printf '.'
+    sleep 2
+done
+echo ""
+echo "Neo4j is ready!"
 
 # Run DiscussionTrees as a python program
 python3 discussion_trees "$@"

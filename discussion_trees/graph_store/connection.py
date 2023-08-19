@@ -30,6 +30,16 @@ class _Connection():
             # todo: for now we iterate all results with list()
             #       we should expose an active lazy iterator later
             return list(session.run(query, parameters))
+    
+    def execute_multiple_queries(self, queries: list, parameter_list: list = None):
+        with self._driver.session() as session:
+            for query, parameters in zip(queries, parameter_list):
+                session.run(query, parameters)
+
+    def execute_multiple_identical_queries(self, query: str, parameter_list: list):
+        with self._driver.session() as session:
+            for parameters in parameter_list:
+                session.run(query, parameters)
 
     def clone(self):
         self.copies += 1

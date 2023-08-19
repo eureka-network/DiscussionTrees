@@ -1,0 +1,15 @@
+# Node.js specific
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+
+# IDE specific
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store

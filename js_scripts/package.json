@@ -1,0 +1,15 @@
+{
+  "name": "pdf2md-units",
+  "version": "0.1.0",
+  "description": "A simple tool to convert PDFs to Markdown using @opendocsg/pdf2md.",
+  "main": "pdf2md.js",
+  "scripts": {
+    "convert": "node pdf2md.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@opendocsg/pdf2md": "^0.1.26"
+  }
+}

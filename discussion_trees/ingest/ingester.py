@@ -2,9 +2,10 @@ import os
 import hashlib
 
 from discussion_trees.graph_store import Graph
-from discussion_trees.document_store import Document
+from discussion_trees.document_store import Document, UnitData
 
-def calculate_sha256(file_path):
+
+def calculate_sha256_from_file(file_path):
     """Calculate the SHA256 hash of a file."""
     sha256 = hashlib.sha256()
     with open(file_path, 'rb') as file:
@@ -13,9 +14,18 @@ def calculate_sha256(file_path):
             sha256.update(chunk)
     return sha256.hexdigest()
 
+
+def calculate_sha256_string(input_string):
+    """Calculate the SHA256 hash of a string."""
+    sha256 = hashlib.sha256()
+    sha256.update(input_string.encode('utf-8'))
+    return sha256.hexdigest()
+
+
 def filepath_to_document_name(filepath):
     """Convert a filepath to a document name by extracting filename."""
     return os.path.splitext(os.path.basename(filepath))[0]
+
 
 class DocumentIngester:
     def __init__(self, graph):
@@ -26,7 +36,7 @@ class DocumentIngester:
            treating each line as a unit."""
         
         # Calculate the document's SHA256 hash
-        document_hash = calculate_sha256(document_path)
+        document_hash = calculate_sha256_from_file(document_path)
         document_name = filepath_to_document_name(document_path)
         document_identifier = f"{document_name}_{document_hash[:8]}"
 
@@ -38,16 +48,28 @@ class DocumentIngester:
         document = Document(self._graph, document_identifier, readOnly=True)
         if document.exists():
             print(f"Document '{document_identifier}' already exists in the graph store")
+            # todo: check if the document has changed, or all units have been ingested
+            print(f"Skipping document '{document_identifier}'")
             return
         else:
             print(f"Document '{document_identifier}' does not exist in the graph store")
+        document.make_writable()
+        document.create(document_name)
 
-        # with open(document_path, 'r') as txt_document:
-        #     lines = txt_document.readlines()
-        #     for line in lines:
-        #         line = line.strip() # remove leading and trailing whitespace
-        #         if line: # avoid adding empty lines
-        #             pass # continue here
+        # read the document from file, and store in an ordered list of UnitData
+        units_data  = []
+        position = 0
+        with open(document_path, 'r') as txt_document:
+            lines = txt_document.readlines()
+            for line in lines:
+                content = line.strip() # remove leading and trailing whitespace
+                if content: # avoid adding empty lines
+                    position += 1
+                    digest = calculate_sha256_string(content)
+                    units_data.append(UnitData(position, content, digest))
+        
+        document.merge(units_data)
+
 class Ingester:
     def __init__(self, config):
         print("Hello, ingester !")
