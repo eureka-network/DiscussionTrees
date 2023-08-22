@@ -72,7 +72,7 @@ class Document:
             if unit.digest in self._cached_units:
                 # check if the unit is at the same position
                 if unit.position != self._cached_units[unit.digest].position:
-                    raise Exception("Unit position mismatch on cached unit")
+                    raise Exception(f"Unit position {unit.position} mismatch on cached unit {self._cached_units[unit.digest].position}")
                 # check if the unit has the same content
                 if unit.content != self._cached_units[unit.digest].content:
                     raise Exception("Unit content mismatch")
