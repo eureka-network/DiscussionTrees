@@ -48,10 +48,6 @@ class DocumentIngester:
         document_name = filepath_to_document_name(document_path)
         document_identifier = f"{document_name}_{document_hash[:8]}"
 
-        print(f"Document name: '{document_name}'") 
-        print(f"Document hash: '{document_hash}'")
-        print(f"Document identifier: '{document_identifier}'")
-
         # Check if the document already exists in the graph store
         document = Document(self._graph, document_identifier, readOnly=True)
         if document.exists():
