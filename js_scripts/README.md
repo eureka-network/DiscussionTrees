@@ -6,7 +6,7 @@ This tool converts PDF files to Markdown using the `@opendocsg/pdf2md` package.
 
 1. Navigate to the `js_scripts` directory:
    ```bash
-   cd js_scripts/parserA
+   cd js_scripts
    ```
 2. Install the required packages:
    ```bash
