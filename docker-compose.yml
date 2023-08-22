@@ -12,5 +12,3 @@ services:
     volumes:
       - ./neo4j/data:/data
       - ./neo4j/logs:/logs
-  parser:
-    image: quay.io/unstructured-io/unstructured:latest
