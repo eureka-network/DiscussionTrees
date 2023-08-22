@@ -15,3 +15,7 @@ dependencies:
     - openai
     - python-dotenv
     - pdfminer.six
+    # # needed for unstructured.io parsing scripts (see their docs for host requirements)
+    # - unstructured[all-docs]
+    # - pytesseract
+    # - python-magic
