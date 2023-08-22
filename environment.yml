@@ -6,6 +6,7 @@ dependencies:
   - lxml
   - elasticsearch
   - pip:
+    - cbor2
     - scrapy
     - neo4j
     - pyOpenSSL

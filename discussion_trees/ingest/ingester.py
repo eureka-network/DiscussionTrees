@@ -1,4 +1,5 @@
 import os
+import cbor2
 import hashlib
 
 from discussion_trees.graph_store import Graph
@@ -15,10 +16,17 @@ def calculate_sha256_from_file(file_path):
     return sha256.hexdigest()
 
 
-def calculate_sha256_string(input_string):
-    """Calculate the SHA256 hash of a string."""
+def calculate_sha256(data):
+    """Calculate the SHA256 hash of a string or bytes."""
     sha256 = hashlib.sha256()
-    sha256.update(input_string.encode('utf-8'))
+    
+    if isinstance(data, str):
+        sha256.update(data.encode('utf-8'))
+    elif isinstance(data, bytes):
+        sha256.update(data)
+    else:
+        raise TypeError("Expected data to be of type str or bytes")
+    
     return sha256.hexdigest()
 
 
@@ -65,10 +73,17 @@ class DocumentIngester:
                 content = line.strip() # remove leading and trailing whitespace
                 if content: # avoid adding empty lines
                     position += 1
-                    digest = calculate_sha256_string(content)
+                    data = {
+                        "position": position,
+                        "content": content,
+                        "document_hash": document_hash,
+                    }
+                    encoded_data = cbor2.dumps(data)
+                    digest = calculate_sha256(encoded_data)
                     units_data.append(UnitData(position, content, digest))
         
-        document.merge(units_data)
+        document.merge(units_data, autoFlush=True)
+        del document # explicitly dereference document
 
 class Ingester:
     def __init__(self, config):
@@ -91,9 +106,16 @@ class Ingester:
         
         # Walk through the knowledge_base_dir and its subdirectories
         for dirpath, _, filenames in os.walk(self._config.knowledge_base_dir):
-            # Filter only the *.txt and *.pdf files
+            # Check if the current directory is/has "ignore" in its path,
+            # then ignore this directory
+            if 'ignore' in dirpath.split(os.path.sep):
+                print(f"Ignoring directory '{dirpath}'")
+                continue 
+            
+            # Filter only the *.txt and *.md files 
+            # use a pre-processor to convert pdf to markdown first
             for filename in filenames:
-                if filename.endswith('.txt') or filename.endswith('.pdf'):
+                if filename.endswith('.txt') or filename.endswith('.md'):
                     full_path = os.path.join(dirpath, filename)
                     documents.append(full_path)
 
