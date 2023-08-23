@@ -9,19 +9,10 @@ class BuilderConfig:
 
     def load_environment_variables(self):
         load_dotenv()
-        self._OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self._BUILDER_TASK_DOCUMENT = os.getenv("BUILDER_TASK_DOCUMENT")
         self._NEO4J_URI = os.getenv("NEO4J_URI")
         self._NEO4J_USER = os.getenv("NEO4J_USER")
         self._NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
-
-    @property
-    def openai_api_key(self):
-        if not hasattr(self, '_OPENAI_API_KEY') or self._OPENAI_API_KEY is None:
-            self.load_environment_variables()
-
-        assert self._OPENAI_API_KEY is not None, "OpenAI API key not set in env variables."
-        return self._OPENAI_API_KEY
     
     @property
     def builder_task_document(self):

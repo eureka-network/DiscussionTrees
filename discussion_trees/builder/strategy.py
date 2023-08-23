@@ -32,4 +32,5 @@ class Strategy:
         self._graph = graph
 
     def build_trajectory(self):
+        trajectory = Trajectory()
         pass

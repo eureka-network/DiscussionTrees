@@ -3,7 +3,7 @@ from .reader import Reader
 from .writer import Writer
 
 """
-Graph provides lowest level graph operations over connection.
+Graph provides reader and writer to access graph operations over connection.
 """
 
 class Graph:
