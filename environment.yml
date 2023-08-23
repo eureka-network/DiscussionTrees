@@ -12,6 +12,7 @@ dependencies:
     - pyOpenSSL
     - cryptography
     - pysha3
+    - together
     - langchain
     - openai
     - python-dotenv

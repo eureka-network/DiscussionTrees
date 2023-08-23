@@ -89,7 +89,6 @@ class Document:
                 self._unstored_units.append(unit.digest)
                 self._number_of_stored_units += 1
                 self._position_digest_list.append(UnitPosition(unit.position, unit.digest))
-                print(f"Cached unstored unit: {unit.position}, {unit.digest[:8]}, {unit.content[:32]}")
 
         if autoFlush:
             self.flush()
