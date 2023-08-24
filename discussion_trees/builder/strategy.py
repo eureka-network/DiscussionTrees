@@ -31,6 +31,11 @@ class Strategy:
     def __init__(self, graph):
         self._graph = graph
 
-    def build_trajectory(self):
+    def start_trajectory(self):
         trajectory = Trajectory()
+
+        for step in STEPS:
+            step_continuations = step.execute(self._graph)
+            trajectory.add_step_continuations(step_continuations)
         pass
+

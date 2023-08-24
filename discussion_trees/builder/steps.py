@@ -16,12 +16,23 @@ class Step:
         self.name = name
         self.continuation = continuation
 
+    def get_all_incompleted_documents(self):
+        # default behaviour
+        pass
+
     def execute(self):
         # default behaviour
         pass
 
 
 class StepCleanup(Step):
+
+    GET_ALL_UNCLEANED_DOCUMENTS_TEMPLATE = """
+        MATCH (d:Document)
+        WHERE NOT EXISTS(d.cleaned) OR d.cleaned = false
+        RETURN d
+        """
+
     def __init__(self):
         super().__init__("cleanup", StepContinuations.CONTINUE)
 

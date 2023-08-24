@@ -23,7 +23,34 @@ class Builder:
 
         # test LLM
         self._together_llm.start()
-        self._together_llm.prompt("Isaac Asimov's Three Laws of Robotics are:\n\n1. ")
+        # self._together_llm.prompt("""Isaac Asimov's Three Laws of Robotics are:\n\n1. """)
+        # prompt = (
+        #     'Given the paragraph:\n\n'
+        #     '"Iran’s Anti-Access/Area Denial (A2AD) strategy is a vital part of its modern military doctrine, '
+        #     'designed to keep potential adversaries at bay by denying them the ability to freely operate within the region."\n\n'
+        #     'Extract all the entities and the relations between them in a structured JSON format. Only use the information '
+        #     'provided in the paragraph. Do not infer or hallucinate any data outside of the paragraph\'s content. Your response '
+        #     'should be in the following format: { "entities": [ { "entity_id": "e1", "type": "EntityType", "value": "EntityName" }, ... ], '
+        #     '"relations": [ { "relation_id": "r1", "type": "RelationType", "from": "e1", "to": "e2", "evidence": "Textual evidence from the paragraph" }, ... ] }'
+        #     )
+        prompt = [
+        "Given the two nearby paragraphs",
+        "'These capabilities are intended to exploit the vulnerabilities of technologically advanced foes, especially the US, creating a layered defense that could severely damage or destroy an adversary’s forces before they reach Iran’s mainland.'",
+        "and",
+        "'This approach presents an ongoing challenge for US policymakers, as US military strategy rests on the assumption that it would enjoy relatively unopposed lines of communication and freedom of movement in the Persian Gulf to enable rapid global and regional force projection.'",
+        "from the same document, extract all the entities and the relations between them. Only use the information provided in the paragraphs. Do not infer or hallucinate any data outside of the paragraph's content. Considering the proximity of the paragraphs, there might be overlapping or related content between them, but treat each piece of information based on its specific context in the given paragraph.",
+        "Your response should be in the following format:",
+        "Entities:",
+        "EntityID, EntityType, EntityName, Textual evidence from the paragraphs",
+        "...",
+        "Relations:",
+        "RelationID, RelationType, FromEntityID, ToEntityID, Textual evidence from the paragraphs",
+        "...",
+        "Only respond with the flat comma delimited list, no other output surrounding it."
+        ]
+        joined_prompt = '\n'.join(prompt)
+
+        self._together_llm.prompt(joined_prompt)
         self._together_llm.stop()
 
         # perception
