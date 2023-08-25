@@ -22,7 +22,7 @@ class Store:
             self._segment_store[record["identifier"]] = {
                 "name": record["name"],
                 "cached": False,
-                "flushed": False,
+                "flushed": True,
                 }
         self._retrieve_all_session_documents()
             

@@ -27,12 +27,6 @@ class Step:
 
 class StepCleanup(Step):
 
-    GET_ALL_UNCLEANED_DOCUMENTS_TEMPLATE = """
-        MATCH (d:Document)
-        WHERE NOT EXISTS(d.cleaned) OR d.cleaned = false
-        RETURN d
-        """
-
     def __init__(self):
         super().__init__("cleanup", StepContinuations.CONTINUE)
 
