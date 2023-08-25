@@ -1,7 +1,7 @@
 import together
 from .config import MeaningFunctionConfig
 
-DEFAULT_MODEL_NAME: str = "togethercomputer/llama-2-70b"
+DEFAULT_MODEL_NAME: str = "togethercomputer/llama-2-70b-chat"
 DEFAULT_MAX_TOKENS: int = 512
 DEFAULT_TEMPERATURE: float = 0.6
 DEFAULT_TOP_K: int = 90

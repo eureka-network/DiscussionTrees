@@ -6,6 +6,7 @@ from discussion_trees.graph_store import Reader, Writer, Graph
 UnitData = namedtuple('UnitData', ['position', 'content', 'digest'])
 UnitPosition = namedtuple('UnitPosition', ['position', 'digest'])
 
+
 class Document:
     def __init__(
             self,
@@ -41,17 +42,17 @@ class Document:
                 self._cache()
             return exists
     
-    def create(self, name):
+    def create(self, name: str, sha256: str):
         if self._exists is None:
             self.exists()
         if self._cached or self._exists:
             raise Exception("Document already exists")
         if self._readOnly:
             raise Exception("Document is read-only")
-        self._writer.add_document(self._identifier, name)
+        self._writer.add_document(self._identifier, name, sha256)
+        # test if db transaction succeeded by getting name from cache
         self._cache()
         assert self._name == name, "Document creation failed"
-        
 
     def get_number_of_stored_units(self):
         if not self._cached:
@@ -90,6 +91,7 @@ class Document:
                 self._number_of_stored_units += 1
                 self._position_digest_list.append(UnitPosition(unit.position, unit.digest))
 
+        self._flushed = False
         if autoFlush:
             self.flush()
                 
@@ -134,9 +136,3 @@ class Document:
 
             assert len(self._position_digest_list) == self._number_of_stored_units, "Number of units does not match number of digests"
             self._cached = True
-
-
-
-    # def get_unit_count(self, refresh=False):
-    #     if not self._cached or refresh:
-    #         self._db_connection

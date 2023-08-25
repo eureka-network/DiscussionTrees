@@ -16,12 +16,17 @@ class Step:
         self.name = name
         self.continuation = continuation
 
+    def get_all_incompleted_documents(self):
+        # default behaviour
+        pass
+
     def execute(self):
         # default behaviour
         pass
 
 
 class StepCleanup(Step):
+
     def __init__(self):
         super().__init__("cleanup", StepContinuations.CONTINUE)
 

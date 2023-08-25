@@ -9,6 +9,7 @@ class BuilderConfig:
 
     def load_environment_variables(self):
         load_dotenv()
+        self._BUILDER_SESSION_ID = os.getenv("BUILDER_SESSION_ID")
         self._BUILDER_TASK_DOCUMENT = os.getenv("BUILDER_TASK_DOCUMENT")
         self._NEO4J_URI = os.getenv("NEO4J_URI")
         self._NEO4J_USER = os.getenv("NEO4J_USER")
@@ -35,3 +36,10 @@ class BuilderConfig:
         assert self._NEO4J_PASSWORD is not None, "NEO4J_PASSWORD not set in env variables."
 
         return self._NEO4J_URI, self._NEO4J_USER, self._NEO4J_PASSWORD
+    
+    @property
+    def builder_session_id(self):
+        if not hasattr(self, '_BUILDER_SESSION_ID'):
+            self.load_environment_variables()
+
+        return self._BUILDER_SESSION_ID

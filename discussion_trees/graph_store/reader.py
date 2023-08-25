@@ -7,6 +7,11 @@ from .connection import ConnectionSingleton
 
 class Reader:
 
+    ALL_DOCUMENTS_STATIC = """
+        MATCH (d:Document)
+        RETURN d.identifier as identifier, d.name as name
+        """
+    
     DOCUMENT_EXISTS_TEMPLATE = """
         MATCH (d:Document {identifier: $document_id})
         RETURN d.identifier as identifier, d.name as name
@@ -23,6 +28,12 @@ class Reader:
         MATCH (u:Unit)-[:IN]->(d)
         RETURN u.position as position, u.digest as digest
         ORDER BY u.position
+        """
+
+    ALL_SESSION_DOCUMENTS_TEMPLATE = """
+        MATCH (sc:SessionController)-[:SESSION_FOR]->(d:Document)
+        WHERE sc.session_id = $session_id
+        RETURN d.identifier as identifier, d.name as name
         """
 
     def __init__(self, connection: ConnectionSingleton):
@@ -50,13 +61,13 @@ class Reader:
 
     # todo: deprecate for lazy evaluations only
     def get_all_documents(self):
-        query: str = """
-                        MATCH (d:Document)
-                        RETURN d.id as id, d.name as name, d.datePublished as datePublished, d.dateIngested as dateIngested
-                    """
-        result = self._connection.execute_query(query)
+        result = self._connection.execute_query(self.ALL_DOCUMENTS_STATIC)
+        return list(result)
+    
+    def get_all_session_documents(self, session_id: str):
+        parameters = {"session_id": session_id}
+        result = self._connection.execute_query(self.ALL_SESSION_DOCUMENTS_TEMPLATE, parameters)
         return list(result)
     
     def close(self):
         self._connection.close()
-
