@@ -1,5 +1,6 @@
 from discussion_trees.graph_store import Graph
 from discussion_trees.meaning_function import TogetherLlm, MeaningFunctionConfig
+from discussion_trees.document_store import Store
 from .strategy import Strategy
 from .perception import FrameBuffer
 
@@ -16,11 +17,26 @@ class Builder:
         # strategy
         self._strategy = Strategy(self._graph)
 
+        # document store
+        self._document_store = Store(self._graph, self._config.builder_session_id)
+        self._document_store.load_documents()
+        self._document_store.include_all_documents_in_session()
+
         # meaning function
         meaning_function_config = MeaningFunctionConfig()
         meaning_function_config.load_environment_variables()
         self._together_llm = TogetherLlm(meaning_function_config)
 
+        # perception
+        self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)
+
+    def run(self):
+        pass
+
+    def step(self):
+        self.frame_buffer.step()
+
+    def quick_dirty_test(self):
         # test LLM
         self._together_llm.start()
         # self._together_llm.prompt("""Isaac Asimov's Three Laws of Robotics are:\n\n1. """)
@@ -52,14 +68,3 @@ class Builder:
 
         self._together_llm.prompt(joined_prompt)
         self._together_llm.stop()
-
-        # perception
-        self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)
-
-    def run(self):
-
-        
-        pass
-
-    def step(self):
-        self.frame_buffer.step()

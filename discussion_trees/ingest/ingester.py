@@ -58,7 +58,7 @@ class DocumentIngester:
         else:
             print(f"Document '{document_identifier}' does not exist in the graph store")
         document.make_writable()
-        document.create(document_name)
+        document.create(document_name, document_hash)
 
         # read the document from file, and store in an ordered list of UnitData
         units_data  = []

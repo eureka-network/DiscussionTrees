@@ -1,8 +1,5 @@
 """Document state machine"""
 
-# todo: remove after removing print statements
-import json
-
 
 PREPOPULATION_QUERIES = {
     "incomplete_cleanup": {"template": "incomplete_step",
@@ -20,14 +17,14 @@ PREPOPULATION_QUERIES = {
     }
 
 
-DOCUMENT_PREPOPULATION_TEMPLATES ={
-    "incomplete_step": """
-                        MATCH (d:Document)-[:HAS_SESSION]->(sc:SessionController)
-                        WHERE sc.session_id = $specific_session_id
-                        OPTIONAL MATCH (sc)-[:HAS_STEP]->(s:Step)
-                        WHERE s.type = $step_type AND (NOT EXISTS(s.completed) OR s.completed = false)
-                        RETURN d.identifier as document_id, s.identifier as step_id
-                        """,
+DOCUMENT_PREPOPULATION_TEMPLATES = {
+    "incomplete_step": (
+        "MATCH (d:Document)-[:HAS_SESSION]->(sc:SessionController) "
+        "WHERE sc.session_id = $specific_session_id "
+        "OPTIONAL MATCH (sc)-[:HAS_STEP]->(s:Step) "
+        "WHERE s.type = $step_type AND (NOT EXISTS(s.completed) OR s.completed = false) "
+        "RETURN d.identifier as document_id, s.identifier as step_id "
+        ),
     }
 
 
@@ -58,7 +55,6 @@ class DocumentState:
                 "template": DOCUMENT_PREPOPULATION_TEMPLATES[query["template"]],
                 "parameters": set_parameters
             }
-        print(f"Prepopulated query library: {json.dumps(self._query_library, indent=4)}")
 
     def _formulate_query(self, transaction, query_key: str, specific_parameters: dict):
         query = self._query_library[query_key]["template"]
