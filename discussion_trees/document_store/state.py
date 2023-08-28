@@ -19,7 +19,7 @@ PREPOPULATION_QUERIES = {
 
 DOCUMENT_PREPOPULATION_TEMPLATES = {
     "incomplete_step": (
-        "MATCH (d:Document)-[:HAS_SESSION]->(sc:SessionController) "
+        "MATCH (sc:SessionController)-[:SESSION_FOR]->(d:Document) "
         "WHERE sc.session_id = $specific_session_id "
         "OPTIONAL MATCH (sc)-[:HAS_STEP]->(s:Step) "
         "WHERE s.type = $step_type AND (NOT EXISTS(s.completed) OR s.completed = false) "
@@ -56,19 +56,19 @@ class DocumentState:
                 "parameters": set_parameters
             }
 
-    def _formulate_query(self, transaction, query_key: str, specific_parameters: dict):
-        query = self._query_library[query_key]["template"]
+    # def _formulate_query(self, transaction, query_key: str, specific_parameters: dict):
+    #     query = self._query_library[query_key]["template"]
         
-        # make a local copy of the parameters
-        parameters = self._query_library.get(query_key, {}).get("parameters", {}).copy()
-        if not parameters:
-            raise Exception(f"Query key {query_key} not found in query library")
-        parameters.update({"specific_session_id": self._session_id})
+    #     # make a local copy of the parameters
+    #     parameters = self._query_library.get(query_key, {}).get("parameters", {}).copy()
+    #     if not parameters:
+    #         raise Exception(f"Query key {query_key} not found in query library")
+    #     parameters.update({"specific_session_id": self._session_id})
 
-        # update parameters with specific parameters
-        if specific_parameters:
-            parameters.update(specific_parameters)
+    #     # update parameters with specific parameters
+    #     if specific_parameters:
+    #         parameters.update(specific_parameters)
 
-        # continue here TODO
-        result = transaction.run(query, parameters)
-        return list(result)
+    #     # continue here TODO
+    #     result = transaction.run(query, parameters)
+    #     return list(result)

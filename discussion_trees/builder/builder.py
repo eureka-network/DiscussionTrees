@@ -14,18 +14,30 @@ class Builder:
             self._config.neo4j_credentials[1], # user
             self._config.neo4j_credentials[2]) # password
         
-        # strategy
-        self._strategy = Strategy(self._graph)
-
         # document store
         self._document_store = Store(self._graph, self._config.builder_session_id)
         self._document_store.load_documents()
-        self._document_store.include_all_documents_in_session()
+
+        # include task document if no documents are in session,
+        # and a task document was specified, or
+        # if no task document was specified, include all documents
+        if self._document_store.number_of_documents_in_session() == 0:
+            if self._config.builder_task_document:
+                print(f"Current session has no documents. Including task document '{self._config.builder_task_document}' in session.")
+                self._document_store.include_document_in_session(self._config.builder_task_document)
+            else:
+                print("Current session has no documents and no task document was specified. Including all documents in session.")
+                self._document_store.include_all_documents_in_session()
+            print(f"Session now has {self._document_store.number_of_documents_in_session()} documents.")
 
         # meaning function
         meaning_function_config = MeaningFunctionConfig()
         meaning_function_config.load_environment_variables()
         self._together_llm = TogetherLlm(meaning_function_config)
+
+        # strategy
+        self._strategy = Strategy(self._document_store)
+        self._strategy.start_trajectory()
 
         # perception
         self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)

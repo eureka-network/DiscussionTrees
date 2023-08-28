@@ -54,6 +54,14 @@ class Writer:
         MATCH (d:Document {identifier: $document_id})
         MERGE (sc)-[:SESSION_FOR]->(d)
         """
+    
+    ADD_STEP_TEMPLATE = """
+        MERGE (s:Step {identifier: $step_id})
+        SET s.type = $type, s.status = $status
+        WITH s
+        MATCH (sc:SessionController {session_document_id: $session_document_id})
+        MERGE (sc)-[:HAS_STEP]->(s)
+        """
 
     def __init__(self, connection: ConnectionSingleton):
         self._connection = connection
@@ -84,6 +92,14 @@ class Writer:
         parameters = {"session_document_id": session_document_id,
                       "session_id": session_id, "document_id": document_id}
         self._connection.execute_query(self.ADD_SESSION_CONTROLLER_TEMPLATE, parameters)
+
+    def merge_step(self, session_id: str, document_id: str, step_id: str, step_type: str, step_status: str):
+        print(f"Adding step {step_id} for session {session_id} and document {document_id}")
+        short_document_id = calculate_sha256(document_id)[:8]
+        session_document_id = f"{session_id}_{short_document_id}"
+        parameters = {"session_document_id": session_document_id,
+                      "step_id": step_id, "type": step_type, "status": step_status}
+        self._connection.execute_query(self.ADD_STEP_TEMPLATE, parameters)
 
     def close(self):
         self._connection.close()
