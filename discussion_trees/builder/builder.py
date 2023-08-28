@@ -37,6 +37,7 @@ class Builder:
 
         # strategy
         self._strategy = Strategy(self._document_store)
+        self._strategy.start_trajectory()
 
         # perception
         self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)

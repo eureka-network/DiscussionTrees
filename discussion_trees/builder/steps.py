@@ -16,9 +16,7 @@ class Step:
         self._type = type
         self._continuation = continuation
 
-    def get_all_incompleted_documents(self):
-        # default behaviour
-        pass
+    # def form_unary_operands(self)
 
     def execute(self):
         # default behaviour

@@ -55,13 +55,28 @@ class Store:
         """Return the number of documents that are part of the session."""
         return len(self._session_list)
 
+    def get_incompleted_documents_for_step(self, step: str):
+        """Return the list of documents that are not yet completed for the step."""
+        result = []
+        for identifier in self._session_list:
+            assert identifier in self._segment_store, f"Document {identifier} expected in segment store, but failed"
+            # step might not have been added for session document yet,
+            # so append default empty state
+            step_state = self._segment_store[identifier]["state"].get(step, {})
+            if step_state.get("status") != "completed":
+                result.append(identifier)
+        return result
+
     # todo: should this be optional for a specific step?
     def _load_state_for_session_documents(self):
         """Load the state for all documents that are part of the session."""
         for identifier in self._session_list:
             result_steps = self._reader.get_state_for_session_documents(self._session_id, identifier)
-            print(f"Retrieved {len(result_steps)} steps for document {identifier} from graph store")
-            print(f"result steps: {result_steps}")
+            for step in result_steps:
+                self._segment_store[identifier]["state"][step["identifier"]] = {
+                    "type": step["type"],
+                    "status": step["status"],
+                    }
 
     def _retrieve_all_session_documents(self):
         """Retrieve all documents that are part of the session."""
