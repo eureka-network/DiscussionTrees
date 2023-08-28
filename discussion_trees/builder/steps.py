@@ -4,17 +4,17 @@ from enum import Enum, auto
 class StepContinuations(Enum):
     CONTINUE = auto() # continue for all incompleted documents
     REDO = auto() # redo for all documents
-    SKIP = auto() # skip for all documents
+    SKIP = auto() # skip for all incompleted documents
 
 
 class Step:
     def __init__(
             self,
-            name,
+            type,
             continuation: StepContinuations=StepContinuations.CONTINUE
         ):
-        self.name = name
-        self.continuation = continuation
+        self._type = type
+        self._continuation = continuation
 
     def get_all_incompleted_documents(self):
         # default behaviour
@@ -23,6 +23,10 @@ class Step:
     def execute(self):
         # default behaviour
         pass
+
+    @property
+    def step_type(self):
+        return self._type
 
 
 class StepCleanup(Step):

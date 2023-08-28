@@ -35,6 +35,14 @@ class Reader:
         WHERE sc.session_id = $session_id
         RETURN d.identifier as identifier, d.name as name
         """
+    
+    STEPS_FOR_SESSION_DOCUMENT_TEMPLATE = """
+        MATCH (sc:SessionController)-[:SESSION_FOR]->(d:Document)
+        WHERE sc.session_id = $session_id AND d.identifier = $document_id
+        MATCH (sc)-[:HAS_STEP]->(s:Step)
+        RETURN s.identifier as identifier, s.type as type, s.status as status
+        ORDER BY s.identifier
+        """
 
     def __init__(self, connection: ConnectionSingleton):
         self._connection = connection
@@ -69,5 +77,10 @@ class Reader:
         result = self._connection.execute_query(self.ALL_SESSION_DOCUMENTS_TEMPLATE, parameters)
         return list(result)
     
+    def get_state_for_session_documents(self, session_id: str, document_id: str):
+        parameters = {"session_id": session_id, "document_id": document_id}
+        result = self._connection.execute_query(self.STEPS_FOR_SESSION_DOCUMENT_TEMPLATE, parameters)
+        return list(result)
+
     def close(self):
         self._connection.close()

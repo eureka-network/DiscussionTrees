@@ -14,6 +14,7 @@ class Store:
 
     # todo: later segment documents for distributing the work load
     def load_documents(self, segment: str = None):
+        """Load all document identifiers from the graph store into memory segment store."""
         if segment is not None:
             raise NotImplementedError("Segmenting documents not implemented yet")
         # simply get all documents
@@ -23,8 +24,10 @@ class Store:
                 "name": record["name"],
                 "cached": False,
                 "flushed": True,
+                "state": {},
                 }
         self._retrieve_all_session_documents()
+        self._load_state_for_session_documents()
             
     def include_all_documents_in_session(self):
         """Mark all documents as part of the session."""
@@ -34,6 +37,31 @@ class Store:
                 cache_entry["flushed"] = False
                 self._session_list.append(identifier)
         self._mark_documents_for_session()
+
+    def include_document_in_session(self, identifier: str):
+        """Mark a document as part of the session."""
+        assert identifier in self._segment_store, f"Document {identifier} expected in segment store, but failed"
+
+        if identifier in self._session_list:
+            print(f"Document {identifier} already part of session ({self._session_id})")
+            return
+        else:
+            print(f"Marking document {identifier} as part of session ({self._session_id})")
+            self._session_list.append(identifier)
+            self._segment_store[identifier]["flushed"] = False
+            self._mark_documents_for_session()
+
+    def number_of_documents_in_session(self):
+        """Return the number of documents that are part of the session."""
+        return len(self._session_list)
+
+    # todo: should this be optional for a specific step?
+    def _load_state_for_session_documents(self):
+        """Load the state for all documents that are part of the session."""
+        for identifier in self._session_list:
+            result_steps = self._reader.get_state_for_session_documents(self._session_id, identifier)
+            print(f"Retrieved {len(result_steps)} steps for document {identifier} from graph store")
+            print(f"result steps: {result_steps}")
 
     def _retrieve_all_session_documents(self):
         """Retrieve all documents that are part of the session."""

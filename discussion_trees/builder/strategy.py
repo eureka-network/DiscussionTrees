@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from .steps import StepContinuations, Step, StepCleanup, StepStructure, StepContent
-from discussion_trees.graph_store import Graph
+from discussion_trees.document_store import Store
 from .trajectory import Trajectory
 
 # A strategy forms a dynamic trajectory given the steps
@@ -28,8 +28,8 @@ ORDERING_POLICY = OrderingPolicy.StepsFirst
 
 
 class Strategy:
-    def __init__(self, graph):
-        self._graph = graph
+    def __init__(self, document_store: Store):
+        self._document_store = document_store
 
     def start_trajectory(self):
         trajectory = Trajectory()

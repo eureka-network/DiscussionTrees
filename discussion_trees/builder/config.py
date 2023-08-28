@@ -42,4 +42,6 @@ class BuilderConfig:
         if not hasattr(self, '_BUILDER_SESSION_ID'):
             self.load_environment_variables()
 
+        assert self._BUILDER_SESSION_ID, "BUILDER_SESSION_ID not set in env variables or is empty."
+
         return self._BUILDER_SESSION_ID
