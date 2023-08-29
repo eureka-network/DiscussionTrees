@@ -64,6 +64,24 @@ class Document:
             self._writer = self._graph.new_writer()
             self._readOnly = False
 
+    def get_unit_data(self, position: int):
+        if not self._cached:
+            self._cache()
+        if position > self._number_of_stored_units:
+            raise Exception("Unit position exceeds number of stored units")
+        UnitPosition = self._position_digest_list[position - 1]
+        assert UnitPosition.position == position, "Unit position mismatch in get_unit"
+        if UnitPosition.digest in self._cached_units:
+            return self._cached_units[UnitPosition.digest]
+        else:
+            unit_results = self._reader.get_units_by_position(self._identifier, position, position)
+            assert len(unit_results) == 1, f"Expected 1 unit, but got {len(unit_results)}"
+            unit_result = unit_results[0]
+            unit = UnitData(unit_result["position"], unit_result["content"], unit_result["digest"])
+            assert unit.digest == UnitPosition.digest, "Unit digest mismatch in get_unit"
+            self._cached_units[unit.digest] = unit
+            return unit
+
     def merge(self, units_data: list, autoFlush=True):
         if self._readOnly:
             raise Exception("Document is read-only")
