@@ -29,6 +29,14 @@ class Reader:
         RETURN u.position as position, u.digest as digest
         ORDER BY u.position
         """
+    
+    UNITS_BY_POSITION_TEMPLATE = """
+        MATCH (d:Document {identifier: $document_id})
+        MATCH (u:Unit)-[:IN]->(d)
+        WHERE u.position >= $position_start AND u.position <= $position_end
+        RETURN u.position as position, u.digest as digest, u.content as content
+        ORDER BY u.position
+        """
 
     ALL_SESSION_DOCUMENTS_TEMPLATE = """
         MATCH (sc:SessionController)-[:SESSION_FOR]->(d:Document)
@@ -66,6 +74,11 @@ class Reader:
         parameters = {"document_id": document_id}
         result = self._connection.execute_query(self.DOCUMENT_UNIT_DIGESTS_TEMPLATE, parameters)
         return result
+    
+    def get_units_by_position(self, document_id: str, position_start: int, position_end: int):
+        parameters = {"document_id": document_id, "position_start": position_start, "position_end": position_end}
+        result = self._connection.execute_query(self.UNITS_BY_POSITION_TEMPLATE, parameters)
+        return list(result)
 
     # todo: deprecate for lazy evaluations only
     def get_all_documents(self):
