@@ -1,5 +1,10 @@
 # Discussion Trees
 
+Discussion Trees is a tool to integrate the positions and arguments of many speakers and authors
+into a single, explorable graph over which algorithms and people can search and reason.
+
+
+
 ## dev environment
 
 let's use mamba.

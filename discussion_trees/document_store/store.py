@@ -1,5 +1,6 @@
 from discussion_trees.graph_store import Graph
 
+from .document import Document
 from .state import DocumentState
 
 class Store:
@@ -13,7 +14,7 @@ class Store:
         self._segment_store = {}
 
     # todo: later segment documents for distributing the work load
-    def load_documents(self, segment: str = None):
+    def load_document_ids(self, segment: str = None):
         """Load all document identifiers from the graph store into memory segment store."""
         if segment is not None:
             raise NotImplementedError("Segmenting documents not implemented yet")
@@ -24,11 +25,30 @@ class Store:
                 "name": record["name"],
                 "cached": False,
                 "flushed": True,
+                "document": None,
                 "state": {},
                 }
         self._retrieve_all_session_documents()
         self._load_state_for_session_documents()
-            
+    
+    def get_document(self, identifier: str):   
+        """Load a document into memory segment store."""
+        assert identifier in self._segment_store, f"Document {identifier} expected in segment store, but failed"
+        if self._segment_store[identifier]["document"] is None:
+            print(f"Loading document {identifier} into segment store")
+            document = Document(self._graph, identifier, readOnly=False)
+            # by asserting .exists() we also cache the document properties and unit digest list
+            assert document.exists(), f"Document {identifier} expected to exist in graph store, but failed"
+            self._segment_store[identifier]["document"] = document
+            self._segment_store[identifier]["cached"] = True
+            return document
+        else:
+            print(f"Document {identifier} already cached in segment store")
+            assert isinstance(self._segment_store[identifier]["document"], Document), f"Document {identifier} expected to be a Document instance, but failed"
+            assert self._segment_store[identifier]["document"].exists(), f"Document {identifier} expected to exist in graph store, but failed"
+            assert self._segment_store[identifier]["cached"], f"Document {identifier} expected to be cached, but failed"
+            return self._segment_store[identifier]["document"]
+
     def include_all_documents_in_session(self):
         """Mark all documents as part of the session."""
         for identifier, cache_entry in self._segment_store.items():
@@ -55,8 +75,8 @@ class Store:
         """Return the number of documents that are part of the session."""
         return len(self._session_list)
 
-    def get_incompleted_documents_for_step(self, step: str):
-        """Return the list of documents that are not yet completed for the step."""
+    def get_incompleted_document_ids_for_step(self, step: str):
+        """Return the list of document ids that are not yet completed for the step."""
         result = []
         for identifier in self._session_list:
             assert identifier in self._segment_store, f"Document {identifier} expected in segment store, but failed"

@@ -16,7 +16,7 @@ class Builder:
         
         # document store
         self._document_store = Store(self._graph, self._config.builder_session_id)
-        self._document_store.load_documents()
+        self._document_store.load_document_ids()
 
         # include task document if no documents are in session,
         # and a task document was specified, or
