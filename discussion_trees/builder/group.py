@@ -1,18 +1,17 @@
 class Group:
-    """A group of units of the given order."""
-    def __init__(self, order: int, units: list):
+    """A group of unit positions of the given order."""
+    def __init__(self, order: int, unit_positions: list):
         assert order >= 1, f"Order must be >= 1, got {order}"
-        assert len(units) == order, f"Number of units must be equal to order, got {len(units)} units and order {order}"
+        assert len(unit_positions) == order, f"Number of units must be equal to order, got {len(units)} units and order {order}"
 
         self._order = order
-        self._units = units
-        self._current
+        self._unit_positions = unit_positions
 
     def __iter__(self):
         return iter(self._units)
     
     def __str__(self):
-        return f"Group(order={self._order}, units={self._units})"
+        return f"Group(order={self._order}, units={self._unit_positions})"
        
 
 class GroupList:

@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+from .group import GroupList, Group
 
 class StepContinuations(Enum):
     CONTINUE = auto() # continue for all incompleted documents
@@ -16,7 +17,8 @@ class Step:
         self._type = type
         self._continuation = continuation
 
-    # def form_unary_operands(self)
+    def build_group_list_from_unit_positions(self, units):
+        raise NotImplementedError("Step must implement build_group_list_from_units")
 
     def execute(self):
         # default behaviour
@@ -46,9 +48,18 @@ class StepStructure(Step):
         pass
 
 
-class StepContent(Step):
+class StepContentOnePoint(Step):
     def __init__(self):
         super().__init__("content", StepContinuations.CONTINUE)
+
+    def build_group_list_from_unit_positions(self, unit_positions):
+        group_list = GroupList(1)
+        for position in unit_positions:
+            # simple one-point group
+            group = Group(1, [position])
+            group_list.add_group(group)
+        return group_list
+
 
     def execute(self):
         print("Hello, content !")
