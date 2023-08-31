@@ -1,8 +1,10 @@
 from discussion_trees.graph_store import Graph
 from discussion_trees.meaning_function import TogetherLlm, MeaningFunctionConfig
 from discussion_trees.document_store import Store
+from discussion_trees.skill_library import SkillLibrary, Skill
+
 from .strategy import Strategy
-from .perception import FrameBuffer
+from .trajectory import Trajectory
 
 class Builder:
     def __init__(self, config):
@@ -37,16 +39,34 @@ class Builder:
 
         # strategy
         self._strategy = Strategy(self._document_store)
-        self._strategy.start_trajectory()
+        self._trajectory = self._strategy.construct_trajectory("default")
 
-        # perception
-        self.frame_buffer = FrameBuffer(self._graph.new_reader(), self._config.builder_task_document)
+        # skill library (initialises manual direct prompt skills)
+        self._skill_library = SkillLibrary()
 
-    def run(self):
-        pass
+    def run(self, trajectory: Trajectory):
+        self._together_llm.start()
 
-    def step(self):
-        self.frame_buffer.step()
+        for phase in trajectory:
+            print(f"Running phase {phase['document_id']} {phase['step'].step_type}")
+            # todo: the difference between a step and a skill is not yet sharp,
+            #       in particular there should live python code that allows to store and query the db
+            #       and possibly more advanced logic and dependencies on previous results.
+            #       for now, I'm simply coupling them in builder with "step_type" and "skill_name"
+            skill = self._skill_library.get_skill(phase["step"].step_type)
+            assert isinstance(skill, Skill), f"Expected to retrieve a Skill instance for {phase['step'].step_type}, but got {type(skill)}"
+            for index, group in enumerate(phase["groups"], start = 1):
+                # hack: to minimise LLM calls, only run phase 10 (depends on my local .env file)
+                if index != 10:
+                    continue
+                units = []
+                for unit_position in group:
+                    units.append(self._document_store.get_document(phase["document_id"]).get_unit(unit_position))
+                prompt = skill.generate_prompt(units)
+                print(f"Prompt for position {unit_position}:\n\n{prompt}\n\n")
+                self._together_llm.prompt(prompt)
+
+        self._together_llm.stop()
 
     def quick_dirty_test(self):
         # test LLM

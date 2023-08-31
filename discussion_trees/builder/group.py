@@ -8,7 +8,7 @@ class Group:
         self._unit_positions = unit_positions
 
     def __iter__(self):
-        return iter(self._units)
+        return iter(self._unit_positions)
     
     def __str__(self):
         return f"Group(order={self._order}, units={self._unit_positions})"

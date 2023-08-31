@@ -2,25 +2,28 @@
 Writer class for neo4j DB.
 """
 
-import hashlib
+# import hashlib
 
 from neo4j import GraphDatabase
+
+from discussion_trees.hasher import calculate_sha256
+
 from .connection import ConnectionSingleton
 
 
-# todo: this is replicated from ingester.py, deduplicate into a utils module
-def calculate_sha256(data):
-    """Calculate the SHA256 hash of a string or bytes."""
-    sha256 = hashlib.sha256()
+# # todo: this is replicated from ingester.py, deduplicate into a utils module
+# def calculate_sha256(data):
+#     """Calculate the SHA256 hash of a string or bytes."""
+#     sha256 = hashlib.sha256()
     
-    if isinstance(data, str):
-        sha256.update(data.encode('utf-8'))
-    elif isinstance(data, bytes):
-        sha256.update(data)
-    else:
-        raise TypeError("Expected data to be of type str or bytes")
+#     if isinstance(data, str):
+#         sha256.update(data.encode('utf-8'))
+#     elif isinstance(data, bytes):
+#         sha256.update(data)
+#     else:
+#         raise TypeError("Expected data to be of type str or bytes")
     
-    return sha256.hexdigest()
+#     return sha256.hexdigest()
 
 
 class Writer:

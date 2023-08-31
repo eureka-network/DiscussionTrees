@@ -1,6 +1,11 @@
+import copy
 from enum import Enum, auto
-from .steps import StepContinuations, Step, StepCleanup, StepStructure, StepContentOnePoint
+import cbor2
+
 from discussion_trees.document_store import Store
+from discussion_trees.hasher import calculate_sha256
+
+from .steps import StepContinuations, Step, StepCleanup, StepStructure, StepContentOnePoint, StepEntitiesOnePoint, StepEventsOnePoint
 from .trajectory import Trajectory
 
 # A strategy forms a dynamic trajectory given the steps
@@ -19,7 +24,9 @@ class OrderingPolicy(Enum):
 STEPS = [
     # StepCleanup(),
     # StepStructure(),
-    StepContentOnePoint()
+    StepContentOnePoint(),
+    # StepEntitiesOnePoint(),
+    # StepEventsOnePoint()
 ]
 
 
@@ -31,8 +38,15 @@ class Strategy:
     def __init__(self, document_store: Store, ordering_policy: OrderingPolicy=ORDERING_POLICY):
         self._document_store = document_store
         self._ordering_policy = ordering_policy
+        self._trajectories = {}
 
-    def start_trajectory(self):
+    def construct_trajectory(self, trajectory_id: str):
+        """Construct a trajectory for the strategy and configuration."""
+        if not trajectory_id:
+            raise ValueError("Trajectory id must be specified")
+        if trajectory_id in self._trajectories:
+            raise ValueError(f"Trajectory {trajectory_id} already constructed")
+        
         trajectory = Trajectory()
 
         if self._ordering_policy == OrderingPolicy.StepsFirst:
@@ -48,15 +62,28 @@ class Strategy:
                     # call on step to form the operands to go into the trajectory from the units
                     # for now, simply form a group list from the unit positions
                     group_list = step.build_group_list_from_unit_positions(range(1, number_of_units + 1))
+                    # phase id is not written to DB, but we might write it to file later,
+                    # so already work with unique identifier (todo: should we include session_id?)
+                    phase_id = calculate_sha256(
+                        cbor2.dumps({
+                            "step_type": step.step_type,
+                            "document_id": document_id,
+                        }))[:8]
                     # add the phase to the trajectory
+                    # note: steps are effectively static, but still deepcopy for later
+                    #       if they become stateful
                     trajectory.add_phase(
-                        phase_id=f"{step.step_type}-{document_id}",
+                        phase_id=phase_id,
                         document_id=document_id,
-                        step=step.step_type,
+                        step=copy.deepcopy(step),
                         groups=group_list,
                     )
                     print(f"Added phase for document {document_id} to trajectory with {len(group_list)} groups of order {group_list._order}")
         else:
             raise NotImplementedError("Document first ordering policy not implemented yet")
 
+        # hold on to trajectory
+        self._trajectories[trajectory_id] = trajectory
+
+        return trajectory
 

@@ -43,7 +43,7 @@ class Store:
             self._segment_store[identifier]["cached"] = True
             return document
         else:
-            print(f"Document {identifier} already cached in segment store")
+            # print(f"Document {identifier} already cached in segment store")
             assert isinstance(self._segment_store[identifier]["document"], Document), f"Document {identifier} expected to be a Document instance, but failed"
             assert self._segment_store[identifier]["document"].exists(), f"Document {identifier} expected to exist in graph store, but failed"
             assert self._segment_store[identifier]["cached"], f"Document {identifier} expected to be cached, but failed"
@@ -53,7 +53,7 @@ class Store:
         """Mark all documents as part of the session."""
         for identifier, cache_entry in self._segment_store.items():
             if not identifier in self._session_list:
-                print(f"Marking document {identifier} as part of session ({self._session_id})")
+                # print(f"Marking document {identifier} as part of session ({self._session_id})")
                 cache_entry["flushed"] = False
                 self._session_list.append(identifier)
         self._mark_documents_for_session()

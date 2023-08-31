@@ -114,10 +114,11 @@ class TogetherLlm():
             stop = DEFAULT_STOP
         )
 
-        print(f"Full output: {output}")
+        print(f"Full output:\n\n {output}\n\n")
 
         # print generated text
         print(output['prompt'][0]+output['output']['choices'][0]['text'])
+        print("\n\n")
         
         return output
        
