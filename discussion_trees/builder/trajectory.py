@@ -5,6 +5,7 @@
 
 from discussion_trees.document_store import Document, UnitData
 from .group import GroupList
+from .steps import Step
 
 class Trajectory:
     def __init__(self):
@@ -15,11 +16,12 @@ class Trajectory:
     def add_phase(self,
                   phase_id: str,
                   document_id: str,
-                  step: str,
+                  step: Step,
                   groups: GroupList):
         """Add a phase to the trajectory.
            A phase takes a specific prompt from a step 
            and a list of groups of units over which to run the prompt."""
+        assert isinstance(step, Step), "Step must be a Step instance"
         assert isinstance(groups, GroupList), "Groups must be a GroupList instance"
         assert phase_id not in self._phases, f"Phase {phase_id} already added to trajectory"
         self._phases_order.append(phase_id)
@@ -29,3 +31,7 @@ class Trajectory:
             "groups": groups,
         }
 
+    def __iter__(self):
+        """Iterate over the phases in the trajectory."""
+        for phase_id in self._phases_order:
+            yield self._phases[phase_id]

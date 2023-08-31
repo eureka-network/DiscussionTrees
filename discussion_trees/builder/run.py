@@ -10,6 +10,7 @@ async def run_builder():
     config.load_environment_variables() # explicitly load the environment variables
     print("TASK DOCUMENT: ", config.builder_task_document)
     builder = Builder(config)
+    builder.run(builder._trajectory)
 
 
 def setup_builder():

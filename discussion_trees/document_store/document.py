@@ -64,6 +64,9 @@ class Document:
             self._writer = self._graph.new_writer()
             self._readOnly = False
 
+    def get_unit(self, position: int):
+        return self.get_unit_data(position).content
+
     def get_unit_data(self, position: int):
         if not self._cached:
             self._cache()

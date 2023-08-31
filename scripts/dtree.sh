@@ -37,7 +37,7 @@ export PYTHONPATH="$DIR:$PYTHONPATH"
 echo "Waiting for Neo4j to be ready..."
 until python3 ./scripts/check_neo4j.py 2>/dev/null; do
     printf '.'
-    sleep 2
+    sleep 4
 done
 echo ""
 echo "Neo4j is ready!"

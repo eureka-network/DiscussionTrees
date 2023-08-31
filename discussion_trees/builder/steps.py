@@ -20,10 +20,6 @@ class Step:
     def build_group_list_from_unit_positions(self, units):
         raise NotImplementedError("Step must implement build_group_list_from_units")
 
-    def execute(self):
-        # default behaviour
-        pass
-
     @property
     def step_type(self):
         return self._type
@@ -34,24 +30,21 @@ class StepCleanup(Step):
     def __init__(self):
         super().__init__("cleanup", StepContinuations.CONTINUE)
 
-    def execute(self):
-        print("Hello, cleanup !")
-        pass
-
 
 class StepStructure(Step):
     def __init__(self):
         super().__init__("structure", StepContinuations.CONTINUE)
 
-    def execute(self):
-        print("Hello, structure !")
-        pass
 
-
-class StepContentOnePoint(Step):
-    def __init__(self):
-        super().__init__("content", StepContinuations.CONTINUE)
-
+class StepOnePoint(Step):
+    def __init__(
+            self,
+            type,
+            continuation: StepContinuations=StepContinuations.CONTINUE
+        ):
+        super().__init__(type, continuation)
+        
+    # note: steps are largely static atm, but likely they might not remain so
     def build_group_list_from_unit_positions(self, unit_positions):
         group_list = GroupList(1)
         for position in unit_positions:
@@ -61,6 +54,16 @@ class StepContentOnePoint(Step):
         return group_list
 
 
-    def execute(self):
-        print("Hello, content !")
-        pass
+class StepContentOnePoint(StepOnePoint):
+    def __init__(self):
+        super().__init__("contentOnePointTABLE", StepContinuations.CONTINUE)
+
+
+class StepEntitiesOnePoint(StepOnePoint):
+    def __init__(self):
+        super().__init__("entitiesOnePointJSON", StepContinuations.CONTINUE)
+
+
+class StepEventsOnePoint(StepOnePoint):
+    def __init__(self):
+        super().__init__("eventsOnePoint", StepContinuations.CONTINUE)
