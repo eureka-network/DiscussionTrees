@@ -1,5 +1,6 @@
 import together
 from .config import MeaningFunctionConfig
+from .meaning_function import MeaningFunction
 
 DEFAULT_MODEL_NAME: str = "togethercomputer/llama-2-70b-chat"
 DEFAULT_MAX_TOKENS: int = 512
@@ -9,8 +10,13 @@ DEFAULT_TOP_P: float = 0.8
 DEFAULT_REPITITION_PENALTY: float = 1.1
 DEFAULT_STOP: list = ['</s>']
 
+SYSTEM_PROMPT_PREFIX: str = "<s>[INST] <<SYS>>\n"
+SYSTEM_PROMPT_SUFFIX: str = "\n<</SYS>>\n\n"
+PROMPT_CLOSURE: str = "[/INST]"
+DEFAULT_SYSTEM_PROMPT: str = "You are a helpful assistent excellent at extracting semantical meaning from text. Always answer completely, correctly and to the point as asked."
 
-class TogetherLlm():
+
+class TogetherLlm(MeaningFunction):
     # define class dictionary to track instances of a given model
     _instances = {}
 
@@ -82,6 +88,7 @@ class TogetherLlm():
 
     def prompt(self,
                prompt: str,
+               wrap_system_prompt: bool = False,
                max_tokens: int = None,
                temperature: float = None,
                top_k: int = None,
@@ -102,6 +109,10 @@ class TogetherLlm():
             top_p = self._top_p
         if repetition_penalty is None:
             repetition_penalty = self._repetition_penalty
+
+        # wrap the system prompt if requested
+        if wrap_system_prompt:
+            prompt = self.wrap_system_prompt(prompt)
         
         output = together.Complete.create(
             prompt = prompt,
@@ -122,4 +133,9 @@ class TogetherLlm():
         
         return output
        
-
+    def wrap_system_prompt(self, prompt: str):
+        return (SYSTEM_PROMPT_PREFIX + 
+                DEFAULT_SYSTEM_PROMPT + 
+                SYSTEM_PROMPT_SUFFIX + 
+                prompt + 
+                PROMPT_CLOSURE)

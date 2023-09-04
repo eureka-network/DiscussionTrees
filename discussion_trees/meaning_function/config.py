@@ -1,5 +1,6 @@
 import os
 import together
+import openai
 
 from dotenv import load_dotenv
 
@@ -13,6 +14,7 @@ class MeaningFunctionConfig:
         self._TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
         self._OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self._together_model_list = None
+        self._openai_model_list = None
 
     # Together API
 
@@ -48,4 +50,16 @@ class MeaningFunctionConfig:
 
         assert self._OPENAI_API_KEY is not None, "OpenAI API key not set in env variables."
         return self._OPENAI_API_KEY
+    
+    @property
+    def openai_model_list(self):
+        if not hasattr(self, '_OPENAI_API_KEY'):
+            self.load_environment_variables()
+
+        assert self._OPENAI_API_KEY is not None, "OpenAI API key not set in env variables."
+
+        openai.api_key = self._OPENAI_API_KEY
+        self._openai_model_list = openai.Model.list()
+
+        return self._openai_model_list
    

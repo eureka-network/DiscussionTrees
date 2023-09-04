@@ -56,7 +56,7 @@ class StepOnePoint(Step):
 
 class StepContentOnePoint(StepOnePoint):
     def __init__(self):
-        super().__init__("contentOnePointTABLE", StepContinuations.CONTINUE)
+        super().__init__("contentOnePointJSON", StepContinuations.CONTINUE)
 
 
 class StepEntitiesOnePoint(StepOnePoint):
