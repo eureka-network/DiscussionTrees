@@ -1,0 +1,35 @@
+metadata:
+  name: "contentOnePointJSON"
+  author: "Benjamin Bollen"
+  version: "1.0"
+  last_updated: "2023-08-01"
+
+description: |
+  extract content and relations from a single unit as JSON
+
+skill_type: "DirectPromptSkill"
+
+order: 1
+
+prompt_template: |
+  Given the paragraph:
+
+  '{unit1}',
+
+  extract all the entities and the relations between these entities in a structured JSON format.
+  Only use the information provided in the above paragraph.
+  Do not infer or hallucinate any data outside of the paragraph's content.
+  Your response should be in the following JSON format:
+
+  {{ "entities": [ {{ "entity_id": "e1", "type": "EntityType", "value": "EntityName", "evidence": "textual evidence from the paragraph" }}, ... ],
+    "relations": [ {{ "relation_id": "r1", "type": "RelationType", "from": "e1", "to": "e2", "evidence": "textual evidence from the paragraph" }}, ... ] }}
+
+  Please only provide the answer.
+
+post_process_code: |
+  import json
+  try:
+      json_data = json.loads(response)
+      post_response = json_data
+  except json.JSONDecodeError as e:
+      raise ValueError(f"Response is not valid JSON: {e}")

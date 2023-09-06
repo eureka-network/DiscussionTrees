@@ -60,6 +60,8 @@ class OpenAiLlm(MeaningFunction):
         print(output["choices"][0]["message"]["content"])
         print("\n\n")
 
-        return output
+        # return output
+        # todo: for now default to this as response
+        return output["choices"][0]["message"]["content"]
 
         

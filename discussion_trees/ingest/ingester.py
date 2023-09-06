@@ -72,7 +72,7 @@ class Ingester:
     def ingest(self):
         # Ensure the knowledge_base_dir points to a valid directory
         if not os.path.isdir(self._config.knowledge_base_dir):
-            raise ValueError(f"'{self._config.knowledge_base_dir}' is not a valid directory!")
+            raise ValueError(f"'{self._config.knowledge_base_dir}' is not a valid directory")
 
         # Build the list of documents in the knowledge base directory
         documents = []

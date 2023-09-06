@@ -11,6 +11,7 @@ class BuilderConfig:
         load_dotenv()
         self._BUILDER_SESSION_ID = os.getenv("BUILDER_SESSION_ID")
         self._BUILDER_TASK_DOCUMENT = os.getenv("BUILDER_TASK_DOCUMENT")
+        self._SKILL_LIBRARY_DIR = os.getenv("SKILL_LIBRARY_DIR")
         self._NEO4J_URI = os.getenv("NEO4J_URI")
         self._NEO4J_USER = os.getenv("NEO4J_USER")
         self._NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
@@ -37,6 +38,14 @@ class BuilderConfig:
 
         return self._NEO4J_URI, self._NEO4J_USER, self._NEO4J_PASSWORD
     
+    @property
+    def skill_library_dir(self):
+        if not hasattr(self, '_SKILL_LIBRARY_DIR'):
+            self.load_environment_variables()
+
+        assert self._SKILL_LIBRARY_DIR is not None, "SKILL_LIBRARY_DIR not set in env variables."
+        return self._SKILL_LIBRARY_DIR
+
     @property
     def builder_session_id(self):
         if not hasattr(self, '_BUILDER_SESSION_ID'):
