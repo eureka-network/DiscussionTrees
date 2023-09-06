@@ -29,6 +29,8 @@ class Document:
         self._cached_units = {} # dictionary to store units by their digest
         self._position_digest_list = [] # list to store position and digest of units in order
         self._unstored_units = [] # list to mark units that have not been persisted yet
+        # todo: store state of trajectory in the store, not in the document?
+        # self._step_execution_state = {} # dictionary to store the execution state of steps
         
     def exists(self):
         if self._exists is not None:

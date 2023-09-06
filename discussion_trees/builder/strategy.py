@@ -47,7 +47,7 @@ class Strategy:
         if trajectory_id in self._trajectories:
             raise ValueError(f"Trajectory {trajectory_id} already constructed")
         
-        trajectory = Trajectory()
+        trajectory = Trajectory(trajectory_id=trajectory_id)
 
         if self._ordering_policy == OrderingPolicy.StepsFirst:
             for step in STEPS:

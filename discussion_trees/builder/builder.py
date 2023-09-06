@@ -43,7 +43,7 @@ class Builder:
         self._trajectory = self._strategy.construct_trajectory("default")
 
         # skill library (initialises manual direct prompt skills)
-        self._skill_library = SkillLibrary()
+        self._skill_library = SkillLibrary(self._config.skill_library_dir)
 
     def run(self, trajectory: Trajectory):
         # self._together_llm.start()
@@ -56,15 +56,19 @@ class Builder:
             #       for now, I'm simply coupling them in builder with "step_type" and "skill_name"
             skill = self._skill_library.get_skill(phase["step"].step_type)
             assert isinstance(skill, Skill), f"Expected to retrieve a Skill instance for {phase['step'].step_type}, but got {type(skill)}"
+            document = self._document_store.get_document(phase["document_id"])
+            actions = self._document_store.get_actions_for_document(phase["document_id"])
             for index, group in enumerate(phase["groups"], start = 1):
-                # hack: to minimise LLM calls, only run phase 10 (depends on my local .env file)
-                if index != 10:
+                # hack: to minimise LLM calls, only run specific phases (depends on my local .env file)
+                if index != 2:
                     continue
                 units = []
                 for unit_position in group:
-                    units.append(self._document_store.get_document(phase["document_id"]).get_unit(unit_position))
+                    units.append(document.get_unit(unit_position))
                 prompt = skill.generate_prompt(units)
                 print(f"Prompt for position {unit_position}:\n\n{prompt}\n\n")
-                self._openai_llm.prompt(prompt, wrap_system_prompt=True)
-
+                response = self._openai_llm.prompt(prompt, wrap_system_prompt=True)
+                processed_response = skill.process_response(response)
+                print(f"Processed response:\n\n{processed_response}\n\n")
+                
         # self._together_llm.stop()

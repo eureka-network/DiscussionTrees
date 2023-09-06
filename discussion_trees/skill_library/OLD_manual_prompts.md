@@ -24,6 +24,14 @@ Your response should be in the following JSON format:
 
 Please only provide the answer.
 """,
+        "post_process_code": """
+import json
+try:
+    json_data = json.loads(response)
+    post_response = json_data
+except json.JSONDecodeError as e:
+    raise ValueError(f"Response is not valid JSON: {e}")
+"""
     },
 
 

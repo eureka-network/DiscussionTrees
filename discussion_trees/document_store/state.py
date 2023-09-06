@@ -1,5 +1,11 @@
 """Document state machine"""
 
+from dataclasses import dataclass
+import cbor2
+
+from discussion_trees.graph_store import Graph
+from discussion_trees.hasher import calculate_sha256
+
 
 PREPOPULATION_QUERIES = {
     "incomplete_cleanup": {"template": "incomplete_step",
@@ -20,21 +26,188 @@ PREPOPULATION_QUERIES = {
 DOCUMENT_PREPOPULATION_TEMPLATES = {
     "incomplete_step": (
         "MATCH (sc:SessionController)-[:SESSION_FOR]->(d:Document) "
-        "WHERE sc.session_id = $specific_session_id "
+        "WHERE sc.session_document_id = $specific_session_id "
         "OPTIONAL MATCH (sc)-[:HAS_STEP]->(s:Step) "
         "WHERE s.type = $step_type AND (NOT EXISTS(s.completed) OR s.completed = false) "
         "RETURN d.identifier as document_id, s.identifier as step_id "
         ),
     }
 
+@dataclass
+class Action:
+    """Action stores the execution of a skill in a step."""
+    trajectory_id: str
+    run: int
+    timestamp: int
+    skill_description: str
+    inputs: list # list of unit or action identifiers
+    outputs: list # list of output from skill
+    identifier: str = None
+    # todo: add extra metadata, runtime, skill details, phase etc
+
+    def __post_init__(self):
+        assert all(isinstance(item, str) for item in self.inputs), "All items in 'inputs' must be strings."
+        self.identifier = self.calculate_identifier()
+
+    def calculate_identifier(self) -> str:
+        """Return the identifier for the action."""
+        serialized_data = cbor2.dumps({
+            "trajectory_id": self.trajectory_id,
+            "run": self.run,
+            "timestamp": self.timestamp,
+            "skill_description": self.skill_description,
+            "inputs": self.inputs,
+        })
+        return calculate_sha256(serialized_data)
+
+class Actions:
+    def __init__(self,
+                 graph: Graph,
+                 document_identifier: str,
+                 session_document_identifier: str):
+        self._document_identifier = document_identifier
+        self._session_document_identifier = session_document_identifier
+        self._actions = {}
+        self._reader = graph.new_reader()
+        self._writer = graph.new_writer()
+        self._graph = graph
+        self._unstored_actions = []
+        self._touched_steps = set()
+        self._existing_steps = {} # steps that already exist in the database
+        self._lookup_step_identifiers = {} # lookup table for step identifiers from step types
+        self._flushed = True
+        self._loaded = False
+
+    def merge_actions_under_step(
+            self,
+            step_type: str,
+            actions: list,
+            autoFlush=True
+        ):
+        
+        step_identifier = self._get_step_identifier(step_type)
+        # steps from DB have a status field,
+        # touching steps does not tell us about status so omit it here
+        self._touched_steps.add({
+            "identifier": step_identifier,
+            "type": step_type,
+            "session_document_id": self._session_document_identifier,
+        })
+        
+        for action in actions:
+            assert isinstance(action, Action), "Action must be an Action instance"
+            if action.identifier in self._actions:
+                raise Exception(f"Action {action.identifier} already added to Actions")
+            self._actions[action.identifier] = action
+            self._unstored_actions.append(action.identifier)
+
+        self._flushed = False
+        if autoFlush:
+            self.flush()
+
+    def load_steps(self):
+        """Load the steps for the session document."""
+        if self._loaded:
+            return
+        
+        steps = self._reader.get_state_for_session_documents(
+            self._session_document_identifier,
+            self._document_identifier,
+        )
+        for step in steps:
+            step_identifier_calc = self._get_step_identifier(step["type"])
+            assert step_identifier_calc == step["identifier"], f"Step identifier {step_identifier_calc} does not match {step['identifier']}"
+            if step["identifier"] not in self._existing_steps:
+                self._existing_steps[step["identifier"]] = step.deepcopy()
+            else:
+                # todo: this is not a real error, but asserting for now that we're
+                # not loading the same step twice
+                raise Exception(f"Step {step['identifier']} already loaded")
+        self._loaded = True
+
+    def get_status(self):
+        """Return the status of the session document."""
+        # todo: for now the status on all steps is "incomplete, so simply return "incomplete"
+        return "incomplete"
+
+    def flush(self):
+        """Flush the actions to the graph store."""
+        if self._flushed:
+            return
+        
+        # if we touched steps, we need to check if they exist in the database
+        if self._touched_steps:
+            if not self._existing_steps:
+                # get existing steps from database
+                # todo: we also query state of steps in document store, investigate duplication/deadcode
+                steps = self._reader.get_state_for_session_documents(
+                    self._session_document_identifier,
+                    self._document_identifier,
+                )
+                for step in steps:
+                    self._existing_steps[step["identifier"]] = step.deepcopy()
+        
+            for touched_step in self._touched_steps:
+                if touched_step["identifier"] not in self._existing_steps:
+                    # if the step does not exist, we need to persist it in the database
+                    self._writer.merge_step(
+                        self._session_document_identifier,
+                        self._document_identifier,
+                        touched_step["identifier"],
+                        touched_step["type"],
+                        "incomplete",
+                    )
+                    # and write to memory in existing steps
+                    self._existing_steps[touched_step["identifier"]] = {
+                        "identifier": touched_step["identifier"],
+                        "type": touched_step["type"],
+                        "status": "incomplete",
+                    }
+                else:
+                    print(f"Step {touched_step['identifier']} already exists in database")
+            
+        # flush actions
+        for unstored_action_id in self._unstored_actions:
+            action = self._actions[unstored_action_id]
+            self._writer.merge_action(
+                action.identifier,
+                action.trajectory_id,
+                action.run,
+                action.timestamp,
+                action.skill_description,
+                action.inputs,
+                action.outputs,
+            )
+        self._touched_steps.clear()
+        self._unstored_actions = []
+        self._flushed = True
+
+    # Internal methods
+
+    def _get_step_identifier(self, step_type: str):
+        """Return the identifier for the step."""
+        # calculate step identifier from step type,
+        # as we want to enforce a single step per type per session
+        if step_type in self._lookup_step_identifiers:
+            step_identifier = self._lookup_step_identifiers[step_type]
+        else:
+            step_digest = calculate_sha256(
+                cbor2.dumps({
+                    "session_document_id": self._session_document_identifier,
+                    "step_type": step_type,
+                }))
+            step_identifier = f"{self._session_document_identifier}-{step_digest[:8]}"
+            self._lookup_step_identifiers[step_type] = step_identifier
+        return step_identifier
+
 
 class DocumentState:
 
-    def __init__(self, session_id: str):
+    def __init__(self, session_document_id: str):
         # query library matches a query key to query templates and initial parameters
         # for retrieving and updating document state
         self._query_library = {}
-        self._session_id = session_id
+        self._session_document_id = session_document_id
         self._prepopulate_manual_steps()
 
     def _prepopulate_manual_steps(self):

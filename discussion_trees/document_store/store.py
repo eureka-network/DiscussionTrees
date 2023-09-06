@@ -1,17 +1,18 @@
 from discussion_trees.graph_store import Graph
+from discussion_trees.hasher import calculate_sha256
 
 from .document import Document
-from .state import DocumentState
+from .state import DocumentState, Actions
 
 class Store:
     def __init__(self, graph: Graph, session_id: str):
-        self._document_state = DocumentState(session_id)
+        # self._document_state = DocumentState(session_id) # todo: this is currently dead-code until later
         self._session_id = session_id
         self._graph = graph
         self._reader = self._graph.new_reader()
         self._writer = self._graph.new_writer()
-        self._session_list = []
-        self._segment_store = {}
+        self._session_list = [] # list of document identifiers that are part of the session
+        self._segment_store = {} # dictionary of document identifiers and their cache entries
 
     # todo: later segment documents for distributing the work load
     def load_document_ids(self, segment: str = None):
@@ -26,7 +27,7 @@ class Store:
                 "cached": False,
                 "flushed": True,
                 "document": None,
-                "state": {},
+                "state": None,
                 }
         self._retrieve_all_session_documents()
         self._load_state_for_session_documents()
@@ -80,23 +81,35 @@ class Store:
         result = []
         for identifier in self._session_list:
             assert identifier in self._segment_store, f"Document {identifier} expected in segment store, but failed"
-            # step might not have been added for session document yet,
-            # so append default empty state
-            step_state = self._segment_store[identifier]["state"].get(step, {})
-            if step_state.get("status") != "completed":
+            status = self._segment_store[identifier]["state"].get_status()
+            if status != "completed":
                 result.append(identifier)
         return result
+    
+    def get_actions_for_document(
+            self,
+            document_identifier: str
+        ):
+        """Return the Actions of the document."""
+        assert document_identifier in self._segment_store, f"Document {document_identifier} expected in segment store, but failed"
+        assert isinstance(self._segment_store[document_identifier]["state"], Actions), f"Document {document_identifier} expected to have an Action instance for state, but failed"
+        return self._segment_store[document_identifier]["state"]
 
-    # todo: should this be optional for a specific step?
+    # Internal methods
+
     def _load_state_for_session_documents(self):
         """Load the state for all documents that are part of the session."""
-        for identifier in self._session_list:
-            result_steps = self._reader.get_state_for_session_documents(self._session_id, identifier)
-            for step in result_steps:
-                self._segment_store[identifier]["state"][step["identifier"]] = {
-                    "type": step["type"],
-                    "status": step["status"],
-                    }
+        for document_identifier in self._session_list:
+            short_document_id = calculate_sha256(document_identifier)[:8]
+            session_document_id = f"{self._session_id}_{short_document_id}"
+            if self._segment_store[document_identifier]["state"] is None:
+                self._segment_store[document_identifier]["state"] = Actions(
+                    self._graph,
+                    document_identifier,
+                    session_document_id,
+                )
+            self._segment_store[document_identifier]["state"].load_steps()
+
 
     def _retrieve_all_session_documents(self):
         """Retrieve all documents that are part of the session."""
@@ -105,7 +118,7 @@ class Store:
         for record in all_sessioned_records:
             assert record["identifier"] in self._segment_store, f"Document {record['identifier']} expected in cache, but failed"
             if record["identifier"] in self._session_list:
-                # don't append twice the same session
+                # don't append twice the same session document
                 continue
             else:
                 self._session_list.append(record["identifier"])
