@@ -54,6 +54,7 @@ class Writer:
         MERGE (a:Action {identifier: $action_id})
         SET a.trajectory_id = $trajectory_id,
             a.run = $run,
+            a.index = $index,
             a.timestamp = $timestamp,
             a.skill_description = $skill_description,
             a.inputs = $inputs,
@@ -104,6 +105,7 @@ class Writer:
                      action_id: str,
                      trajectory_id: str,
                      run: int,
+                     index: int,
                      timestamp: int,
                      skill_description: str,
                      inputs: list,
@@ -113,7 +115,7 @@ class Writer:
         serialised_outputs = json.dumps(outputs)
         print(f"Storing action {action_id} for step {step_id} with skill {skill_description}")
         parameters = {"step_id": step_id, "action_id": action_id,
-                        "trajectory_id": trajectory_id, "run": run, "timestamp": timestamp,
+                        "trajectory_id": trajectory_id, "run": run, "index": index, "timestamp": timestamp,
                         "skill_description": skill_description, "inputs": inputs,
                         "json_output": serialised_outputs}
         self._connection.execute_query(self.ADD_ACTION_TEMPLATE, parameters)

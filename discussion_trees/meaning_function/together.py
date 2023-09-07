@@ -125,13 +125,14 @@ class TogetherLlm(MeaningFunction):
             stop = DEFAULT_STOP
         )
 
-        print(f"Full output:\n\n {output}\n\n")
+        # print(f"Full output:\n\n {output}\n\n")
 
-        # print generated text
-        print(output['prompt'][0]+output['output']['choices'][0]['text'])
-        print("\n\n")
+        # # print generated text
+        # print(output['prompt'][0]+output['output']['choices'][0]['text'])
+        # print("\n\n")
         
-        return output
+        # return output
+        return output['output']['choices'][0]['text']
        
     def wrap_system_prompt(self, prompt: str):
         return (SYSTEM_PROMPT_PREFIX + 

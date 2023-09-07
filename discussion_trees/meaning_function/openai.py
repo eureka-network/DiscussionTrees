@@ -54,11 +54,11 @@ class OpenAiLlm(MeaningFunction):
             messages =  messages,
             temperature = temperature)
         
-        print(f"Full output:\n\n {output}\n\n")
+        # print(f"Full output:\n\n {output}\n\n")
         
-        print("Response:\n")
-        print(output["choices"][0]["message"]["content"])
-        print("\n\n")
+        # print("Response:\n")
+        # print(output["choices"][0]["message"]["content"])
+        # print("\n\n")
 
         # return output
         # todo: for now default to this as response

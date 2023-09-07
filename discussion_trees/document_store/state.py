@@ -44,6 +44,7 @@ class Action:
     step_id: str
     trajectory_id: str
     run: int
+    index: int
     timestamp: int
     skill_description: str
     inputs: list # list of unit or action identifiers
@@ -179,6 +180,7 @@ class Actions:
                 action_id=action.identifier,
                 trajectory_id=action.trajectory_id,
                 run=action.run,
+                index=action.index,
                 timestamp=action.timestamp,
                 skill_description=action.skill_description,
                 inputs=action.inputs,
