@@ -11,6 +11,15 @@ skill_type: "DirectPromptSkill"
 
 order: 1
 
+inputs:
+  - source: Document
+
+output:
+  type: Action
+
+build_phase_code: |
+  document.number_of_units()
+
 prompt_template: |
   Given the paragraph:
 

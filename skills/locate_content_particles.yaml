@@ -1,0 +1,20 @@
+metadata:
+  name: "locateContentParticlesOnePoint"
+  author: "Benjamin Bollen"
+  version: "1.0"
+  last_updated: "2023-08-01"
+
+description: |
+  localize content as particles in original text given content extraction
+
+skill_type: ComputeMap
+
+order: 1
+
+inputs:
+  - source: Document
+  - action: contentOnePointJSON
+
+output:
+  type: action
+

@@ -81,6 +81,7 @@ class Builder:
                     step_id = step_identifier,
                     trajectory_id = trajectory.get_run_identifier(1), # for now we only have one run
                     run = 1,
+                    index = index,
                     timestamp = int(time.time()), # seconds since epoch
                     skill_description = skill_description,
                     inputs = unit_identifiers,
