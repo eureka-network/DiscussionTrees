@@ -18,3 +18,6 @@ class MeaningFunction():
                repetition_penalty: float = None
         ):
         pass
+
+    def description(self):
+        pass

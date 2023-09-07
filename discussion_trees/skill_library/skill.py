@@ -20,6 +20,9 @@ class Skill:
     
     def process_response(self, response):
         raise NotImplementedError("Skill must implement process_response")
+    
+    def description(self):
+        raise NotImplementedError("Skill must implement description")
 
 
 class DirectPromptSkill(Skill):
@@ -64,6 +67,11 @@ class DirectPromptSkill(Skill):
                 raise Exception(f"Error while executing post process code: {e}")
             
             return local_context["post_response"]
+    
+    @property
+    def description(self):
+        # todo: generate an active description based on self
+        return self._name
 
 
 class SkillLibrary:

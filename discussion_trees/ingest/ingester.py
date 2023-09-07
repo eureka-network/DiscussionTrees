@@ -53,7 +53,7 @@ class DocumentIngester:
                     }
                     encoded_data = cbor2.dumps(data)
                     digest = calculate_sha256(encoded_data)
-                    units_data.append(UnitData(position, content, digest))
+                    units_data.append(UnitData(None, position, content, digest))
         
         document.merge(units_data, autoFlush=True)
         del document # explicitly dereference document

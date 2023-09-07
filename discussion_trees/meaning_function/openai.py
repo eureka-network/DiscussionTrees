@@ -4,9 +4,9 @@ from .config import MeaningFunctionConfig
 from .meaning_function import MeaningFunction
 
 
-DEFAULT_TEMPERATURE: float = 0.0
+DEFAULT_TEMPERATURE: float = 0.1
 
-DEFAULT_MODEL_NAME =  "gpt-3.5-turbo-0613" #"gpt-4-0613" 
+DEFAULT_MODEL_NAME =  "gpt-3.5-turbo-0613" # "gpt-4-0613"
 DEFAULT_SYSTEM_PROMPT: str = "You are a helpful assistent."
 
 class OpenAiLlm(MeaningFunction):
@@ -63,5 +63,9 @@ class OpenAiLlm(MeaningFunction):
         # return output
         # todo: for now default to this as response
         return output["choices"][0]["message"]["content"]
+    
+    @property
+    def description(self):
+        return f"OpenAI LLM {self._model_name} (default temperature {self._temperature})"
 
         
