@@ -3,7 +3,7 @@ from collections import namedtuple
 from discussion_trees.graph_store import Reader, Writer, Graph
 
 
-UnitData = namedtuple('UnitData', ['position', 'content', 'digest'])
+UnitData = namedtuple('UnitData', ['identifier', 'position', 'content', 'digest'])
 UnitPosition = namedtuple('UnitPosition', ['position', 'digest'])
 
 
@@ -82,7 +82,11 @@ class Document:
             unit_results = self._reader.get_units_by_position(self._identifier, position, position)
             assert len(unit_results) == 1, f"Expected 1 unit, but got {len(unit_results)}"
             unit_result = unit_results[0]
-            unit = UnitData(unit_result["position"], unit_result["content"], unit_result["digest"])
+            unit = UnitData(
+                unit_result["identifier"],
+                unit_result["position"],
+                unit_result["content"],
+                unit_result["digest"])
             assert unit.digest == UnitPosition.digest, "Unit digest mismatch in get_unit"
             self._cached_units[unit.digest] = unit
             return unit
@@ -92,8 +96,15 @@ class Document:
             raise Exception("Document is read-only")
 
         for unit in units_data:
+            assert isinstance(unit, UnitData), "Only UnitData instances can be added."
+            # if no specific identifier is given, generate the standard identifier
+            if unit.identifier is None:
+                unit.identifier = self.get_unit_identifier(unit.position, unit.digest)
             # check if the unit already exists in cache
             if unit.digest in self._cached_units:
+                # check if the unit has the same identifier
+                if unit.identifier != self._chached_units[unit.digest].identifier:
+                    raise Exception("Unit identifier mismatch")
                 # check if the unit is at the same position
                 if unit.position != self._cached_units[unit.digest].position:
                     raise Exception(f"Unit position {unit.position} mismatch on cached unit {self._cached_units[unit.digest].position}")
@@ -130,7 +141,7 @@ class Document:
         for digest in self._unstored_units:
             assert digest in self._cached_units.keys(), "Unstored unit digest not found in cache"
             unit_parameters = {
-                "unit_id": f"{self._identifier}-{self._cached_units[digest].position}-{digest[:8]}",
+                "unit_id": self.get_unit_identifier(self._cached_units[digest].position, digest),
                 "document_id": self._identifier,
                 "position": self._cached_units[digest].position,
                 "content": self._cached_units[digest].content,
@@ -144,6 +155,11 @@ class Document:
             f"Number of stored units ({self._number_of_stored_units}) does not match expected ({expected_number_of_stored_units})"
         self._unstored_units = []
         self._flushed = True
+
+    def get_unit_identifier(self, unit_position: int, unit_digest: str):
+        return f"{self._identifier}-{unit_position}-{unit_digest[:8]}"
+
+    # Internal methods
 
     def _cache(self):
         if not self._cached:

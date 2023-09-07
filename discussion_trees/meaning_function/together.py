@@ -139,3 +139,7 @@ class TogetherLlm(MeaningFunction):
                 SYSTEM_PROMPT_SUFFIX + 
                 prompt + 
                 PROMPT_CLOSURE)
+
+    @property
+    def description(self):
+        return f"Together.ai LLM {self._model_name} (default temperature {self._temperature})"

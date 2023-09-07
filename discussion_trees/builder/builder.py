@@ -1,6 +1,8 @@
+import time
+
 from discussion_trees.graph_store import Graph
 from discussion_trees.meaning_function import TogetherLlm, OpenAiLlm, MeaningFunction, MeaningFunctionConfig
-from discussion_trees.document_store import Store
+from discussion_trees.document_store import Store, Action
 from discussion_trees.skill_library import SkillLibrary, Skill
 
 from .strategy import Strategy
@@ -58,17 +60,37 @@ class Builder:
             assert isinstance(skill, Skill), f"Expected to retrieve a Skill instance for {phase['step'].step_type}, but got {type(skill)}"
             document = self._document_store.get_document(phase["document_id"])
             actions = self._document_store.get_actions_for_document(phase["document_id"])
+            step_identifier = actions.get_step_identifier(phase["step"].step_type)
+            skill_description = self._openai_llm.description + ": " + skill.description
+            new_actions = []
             for index, group in enumerate(phase["groups"], start = 1):
                 # hack: to minimise LLM calls, only run specific phases (depends on my local .env file)
-                if index != 2:
+                if index >= 7:
                     continue
                 units = []
+                unit_identifiers = []
                 for unit_position in group:
-                    units.append(document.get_unit(unit_position))
+                    unit_data = document.get_unit_data(unit_position)
+                    units.append(unit_data.content)
+                    unit_identifiers.append(unit_data.identifier)
                 prompt = skill.generate_prompt(units)
                 print(f"Prompt for position {unit_position}:\n\n{prompt}\n\n")
                 response = self._openai_llm.prompt(prompt, wrap_system_prompt=True)
                 processed_response = skill.process_response(response)
+                new_actions.append(Action(
+                    step_id = step_identifier,
+                    trajectory_id = trajectory.get_run_identifier(1), # for now we only have one run
+                    run = 1,
+                    timestamp = int(time.time()), # seconds since epoch
+                    skill_description = skill_description,
+                    inputs = unit_identifiers,
+                    outputs = [processed_response],
+                ))
                 print(f"Processed response:\n\n{processed_response}\n\n")
-                
+            actions.merge_actions_under_step(
+                phase["step"].step_type,
+                actions = new_actions,
+                autoFlush = True,
+            )    
+            
         # self._together_llm.stop()

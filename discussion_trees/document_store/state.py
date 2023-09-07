@@ -1,5 +1,6 @@
 """Document state machine"""
 
+from collections import namedtuple
 from dataclasses import dataclass
 import cbor2
 
@@ -33,9 +34,14 @@ DOCUMENT_PREPOPULATION_TEMPLATES = {
         ),
     }
 
+
+TouchedStep = namedtuple('TouchedStep', ['identifier', 'type', 'session_document_id'])
+
+
 @dataclass
 class Action:
     """Action stores the execution of a skill in a step."""
+    step_id: str
     trajectory_id: str
     run: int
     timestamp: int
@@ -85,17 +91,15 @@ class Actions:
             autoFlush=True
         ):
         
-        step_identifier = self._get_step_identifier(step_type)
+        step_identifier = self.get_step_identifier(step_type)
         # steps from DB have a status field,
         # touching steps does not tell us about status so omit it here
-        self._touched_steps.add({
-            "identifier": step_identifier,
-            "type": step_type,
-            "session_document_id": self._session_document_identifier,
-        })
+        # note: use a named tuple because a set requires a hashable object
+        self._touched_steps.add(TouchedStep(step_identifier, step_type, self._session_document_identifier))
         
         for action in actions:
             assert isinstance(action, Action), "Action must be an Action instance"
+            assert action.step_id == step_identifier, f"Action {action.identifier} does not belong to step {step_identifier}"
             if action.identifier in self._actions:
                 raise Exception(f"Action {action.identifier} already added to Actions")
             self._actions[action.identifier] = action
@@ -115,10 +119,10 @@ class Actions:
             self._document_identifier,
         )
         for step in steps:
-            step_identifier_calc = self._get_step_identifier(step["type"])
+            step_identifier_calc = self.get_step_identifier(step["type"])
             assert step_identifier_calc == step["identifier"], f"Step identifier {step_identifier_calc} does not match {step['identifier']}"
             if step["identifier"] not in self._existing_steps:
-                self._existing_steps[step["identifier"]] = step.deepcopy()
+                self._existing_steps[step["identifier"]] = step
             else:
                 # todo: this is not a real error, but asserting for now that we're
                 # not loading the same step twice
@@ -147,44 +151,44 @@ class Actions:
                 for step in steps:
                     self._existing_steps[step["identifier"]] = step.deepcopy()
         
+            # iterate over the named tuples in touched steps
             for touched_step in self._touched_steps:
-                if touched_step["identifier"] not in self._existing_steps:
+                if touched_step.identifier not in self._existing_steps:
                     # if the step does not exist, we need to persist it in the database
                     self._writer.merge_step(
                         self._session_document_identifier,
                         self._document_identifier,
-                        touched_step["identifier"],
-                        touched_step["type"],
+                        touched_step.identifier,
+                        touched_step.type,
                         "incomplete",
                     )
                     # and write to memory in existing steps
-                    self._existing_steps[touched_step["identifier"]] = {
-                        "identifier": touched_step["identifier"],
-                        "type": touched_step["type"],
+                    self._existing_steps[touched_step.identifier] = {
+                        "identifier": touched_step.identifier,
+                        "type": touched_step.type,
                         "status": "incomplete",
                     }
                 else:
-                    print(f"Step {touched_step['identifier']} already exists in database")
+                    print(f"Step {touched_step.identifier} already exists in database")
             
         # flush actions
         for unstored_action_id in self._unstored_actions:
             action = self._actions[unstored_action_id]
             self._writer.merge_action(
-                action.identifier,
-                action.trajectory_id,
-                action.run,
-                action.timestamp,
-                action.skill_description,
-                action.inputs,
-                action.outputs,
+                step_id=action.step_id,
+                action_id=action.identifier,
+                trajectory_id=action.trajectory_id,
+                run=action.run,
+                timestamp=action.timestamp,
+                skill_description=action.skill_description,
+                inputs=action.inputs,
+                outputs=action.outputs,
             )
         self._touched_steps.clear()
         self._unstored_actions = []
         self._flushed = True
 
-    # Internal methods
-
-    def _get_step_identifier(self, step_type: str):
+    def get_step_identifier(self, step_type: str):
         """Return the identifier for the step."""
         # calculate step identifier from step type,
         # as we want to enforce a single step per type per session

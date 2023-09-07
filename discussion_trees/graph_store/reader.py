@@ -34,7 +34,7 @@ class Reader:
         MATCH (d:Document {identifier: $document_id})
         MATCH (u:Unit)-[:IN]->(d)
         WHERE u.position >= $position_start AND u.position <= $position_end
-        RETURN u.position as position, u.digest as digest, u.content as content
+        RETURN u.identifier as identifier, u.position as position, u.digest as digest, u.content as content
         ORDER BY u.position
         """
 

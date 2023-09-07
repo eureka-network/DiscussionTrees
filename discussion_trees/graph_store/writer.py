@@ -103,7 +103,8 @@ class Writer:
                      step_id: str,
                      action_id: str,
                      trajectory_id: str,
-                     run: int, timestamp: int,
+                     run: int,
+                     timestamp: int,
                      skill_description: str,
                      inputs: list,
                      outputs: list):
