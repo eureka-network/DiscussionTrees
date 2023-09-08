@@ -2,6 +2,8 @@ import json
 import yaml
 import os
 
+from discussion_trees.builder.group import Group, GroupList
+
 from .manual_skills import MANUAL_SKILLS
 
 
@@ -15,7 +17,7 @@ class Skill:
     def order(self):
         raise NotImplementedError("Skill must implement order")
     
-    def generate_prompt(self, units: list):
+    def generate(self, units: list):
         raise NotImplementedError("Skill must implement generate_prompt")
     
     def process_response(self, response):
@@ -41,7 +43,7 @@ class DirectPromptSkill(Skill):
     def order(self):
         return self._order
 
-    def generate_prompt(self, units: list):
+    def generate(self, units: list):
         """Generate a prompt for the given units."""
         assert len(units) == self._order, f"Number of units must be equal to order, got {len(units)} units and order {self._order}"
         
@@ -52,20 +54,28 @@ class DirectPromptSkill(Skill):
 
         return self._prompt_template.format(**replacements)
     
-    def process_response(self, response):
+    def process_response(self, input: list, response):
         """Process the response."""
         if self._post_process_code is None:
             return response
         else:
+            assert isinstance(input, list), "Input must be a list"
+            assert len(input) == self._order, f"Number of units must be equal to order, got {len(input)} units and order {self._order}"
+
             global_context = {
                 "json": json,
             }
-            local_context = {"response": response}
+            local_context = {
+                "input": input,
+                "response": response
+            }
+            print(f"local context: {local_context}")
             try:
                 exec(self._post_process_code, global_context, local_context)
             except Exception as e:
                 raise Exception(f"Error while executing post process code: {e}")
             
+            print(f"post process code result: {local_context['post_response']}")
             return local_context["post_response"]
     
     @property
@@ -73,6 +83,45 @@ class DirectPromptSkill(Skill):
         # todo: generate an active description based on self
         return self._name
 
+
+class ComputeMapSkill(Skill):
+    def __init__(
+            self,
+            name: str,
+            order: int,
+            depth: int,
+            description: str,
+            code: str
+        ):
+        assert isinstance(code, str), "Code must be a string"
+        assert code != "", "Code must not be empty"
+        self._name = name
+        self._order = order
+        self._depth = depth
+        self._description = description
+        self._code = code
+
+    def order(self):
+        return self._order
+    
+    def map_groups(self):
+        # build the segment and the 
+        pass
+
+    def generate(self, units: list):
+        pass
+
+    def compute(self, state: list):
+        """Compute the action on the state of this group with this skill."""
+        assert len(state) == self._order, f"Group order must be equal to skill order, got {len(state)} and {self._order}"
+
+        global_context = {
+            "json": json,
+        }
+        local_context = {
+            "state": state,
+        }
+        raise NotImplementedError("ComputeMapSkill must implement compute")
 
 class SkillLibrary:
     def __init__(self, skills_dir: str):

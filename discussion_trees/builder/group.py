@@ -12,6 +12,10 @@ class Group:
     
     def __str__(self):
         return f"Group(order={self._order}, units={self._unit_positions})"
+    
+    @property
+    def order(self):
+        return self._order
        
 
 class GroupList:
