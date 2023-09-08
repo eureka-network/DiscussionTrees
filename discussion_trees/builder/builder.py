@@ -65,7 +65,7 @@ class Builder:
             new_actions = []
             for index, group in enumerate(phase["groups"], start = 1):
                 # hack: to minimise LLM calls, only run specific phases (depends on my local .env file)
-                if index >= 7:
+                if index != 2:
                     continue
                 units = []
                 unit_identifiers = []
@@ -73,10 +73,10 @@ class Builder:
                     unit_data = document.get_unit_data(unit_position)
                     units.append(unit_data.content)
                     unit_identifiers.append(unit_data.identifier)
-                prompt = skill.generate_prompt(units)
+                prompt = skill.generate(units)
                 print(f"Prompt for position {unit_position}:\n\n{prompt}\n\n")
                 response = self._openai_llm.prompt(prompt, wrap_system_prompt=True)
-                processed_response = skill.process_response(response)
+                processed_response = skill.process_response(units, response)
                 new_actions.append(Action(
                     step_id = step_identifier,
                     trajectory_id = trajectory.get_run_identifier(1), # for now we only have one run
